@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>POC Captura de Fotos</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="screen">
+
+    <!-- TOAST -->
+    <div id="toast" class="toast hidden" role="status" aria-live="polite">
+      <div class="toastIcon" aria-hidden="true">✓</div>
+      <div id="toastText" class="toastText">Concluído</div>
+    </div>
+
+    <!-- LOGIN -->
+    <section id="loginView" class="card" aria-label="Tela de Login">
+      <header class="header">
+        <h1 class="title">Entrar</h1>
+        <p class="subtitle">Use suas credenciais para acessar a POC.</p>
+      </header>
+
+      <form id="loginForm" class="form">
+        <label class="field">
+          <span class="label">Usuário</span>
+          <input id="username" class="input" type="text" autocomplete="username" placeholder="Digite seu usuário" required />
+        </label>
+
+        <label class="field">
+          <span class="label">Senha</span>
+          <input id="password" class="input" type="password" autocomplete="current-password" placeholder="Digite sua senha" required />
+        </label>
+
+        <div id="loginError" class="alert hidden" role="alert"></div>
+
+        <button type="submit" class="btn btn-primary">Acessar</button>
+
+      </form>
+    </section>
+
+    <!-- INTRO / PERMISSÕES -->
+    <section id="introView" class="card hidden" aria-label="Instruções">
+      <header class="header">
+        <h1 id="introTitle" class="title">É hora da captura de fotos</h1>
+        <p id="introDesc" class="subtitle"></p>
+      </header>
+
+      <div class="hero">
+        <img id="introImage" class="car" alt="Ilustração" />
+      </div>
+
+      <div class="stack">
+        <button id="enableAllBtn" class="btn btn-primary">Permitir localização e câmera</button>
+        <div id="introStatus" class="status" aria-live="polite"></div>
+        <button id="logoutBtnIntro" class="btn btn-ghost" type="button">Sair</button>
+      </div>
+    </section>
+
+    <!-- CAPTURA -->
+    <section id="captureView" class="card hidden" aria-label="Captura">
+      <header class="capHeader">
+        <button id="backBtn" class="iconBtn" type="button" aria-label="Voltar">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <div class="capTitles">
+          <div id="capTitle" class="capTitle">Captura</div>
+          <div id="capSubtitle" class="capSubtitle">---</div>
+        </div>
+
+        <button id="logoutBtnCap" class="iconBtn" type="button" aria-label="Sair">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M10 7V6a2 2 0 012-2h7a2 2 0 012 2v12a2 2 0 01-2 2h-7a2 2 0 01-2-2v-1" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M15 12H3m0 0l3-3m-3 3l3 3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </header>
+
+      <!-- CAMERA -->
+      <div id="cameraBox" class="cameraBox">
+        <video id="video" class="video" playsinline autoplay></video>
+        <div id="cameraHint" class="cameraHint">---</div>
+      </div>
+
+      <!-- FOTO/CROP -->
+      <div id="cropBox" class="cameraBox hidden">
+        <div class="cropBar">
+          <button id="cropModeBtn" class="btn btn-secondary" type="button">
+            Ajustar recorte
+          </button>
+          <button id="confirmCropBtn" class="btn btn-primary" type="button" disabled>
+            Confirmar recorte
+          </button>
+        </div>
+
+        <canvas id="cropCanvas" class="cropCanvas"></canvas>
+        <div class="cameraHint">Recorte opcional</div>
+      </div>
+
+      <div class="stack">
+        <div id="capStatus" class="status" aria-live="polite"></div>
+
+        <button id="takePhotoBtn" class="btn btn-primary" type="button">
+          Tirar foto
+        </button>
+
+        <div id="previewActions" class="row hidden">
+          <button id="retakeBtn" class="btn btn-secondary" type="button">Refazer</button>
+          <button id="useBtn" class="btn btn-primary" type="button">Usar foto</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SUCCESS (novo layout) -->
+    <section id="successView" class="card hidden" aria-label="Sucesso">
+      <header class="successHeader">
+        <div class="successBadge" aria-hidden="true">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+            <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <h1 class="title" style="text-align:center; margin-top: 10px;">Capturas finalizadas</h1>
+        <p class="subtitle" style="text-align:center;">
+          Agora você pode seguir com a formalização.
+        </p>
+      </header>
+
+      <div class="docList" aria-label="Lista de documentos">
+        <div class="docItem">
+          <div class="docLeft">
+            <div class="docCheck" aria-hidden="true">✓</div>
+            <div class="docTexts">
+              <div class="docTitle">Traseira do veículo</div>
+              <div class="docMeta">Concluído</div>
+            </div>
+          </div>
+          <div class="docThumb">
+            <img id="rearThumb" alt="Miniatura traseira do veículo" />
+          </div>
+        </div>
+
+        <div class="docItem">
+          <div class="docLeft">
+            <div class="docCheck" aria-hidden="true">✓</div>
+            <div class="docTexts">
+              <div class="docTitle">Placa do veículo</div>
+              <div class="docMeta">Concluído</div>
+            </div>
+          </div>
+          <div class="docThumb">
+            <img id="plateThumb" alt="Miniatura placa do veículo" />
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <button id="goFormalizationBtn" class="btn btn-primary" type="button">
+          Seguir para formalização
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
