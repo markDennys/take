@@ -213,6 +213,9 @@ function goToHome(){
 
 // ================= GUIDE (INSTRUÇÕES) =================
 function applyGuideUI(){
+  // ✅ FIX: garante que o botão não fica travado quando alterna para placa
+  guideContinueBtn.disabled = false;
+
   guideTitle.textContent = "É hora da captura de fotos";
 
   if (currentStep === STEP_REAR){
@@ -290,6 +293,9 @@ function resetCaptureUI(){
   show(takePhotoBtn);
   hide(previewActions);
 
+  // ✅ FIX: garante que o botão "Tirar foto" volta habilitado ao entrar em captura
+  takePhotoBtn.disabled = false;
+
   capturedImage = null;
   finalPhotoBase64 = null;
 
@@ -326,6 +332,10 @@ function goToCapture(){
 
   applyCaptureUI();
   resetCaptureUI();
+
+  // ✅ redundância saudável: evita estado preso vindo de outras telas
+  takePhotoBtn.disabled = false;
+
   safePlayVideo();
   setCapStatus("Câmera pronta.");
 }
