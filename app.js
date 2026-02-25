@@ -164,6 +164,23 @@ const rearImg = "rear.png";
 const rearFallbackUrl = "https://cdn.gazetasp.com.br/upload/dn_arquivo/2022/08/novo-porsche-911-gt3-r-traseira.jpg";
 const plateSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='360' viewBox='0 0 560 360'%3E%3Crect width='560' height='360' rx='28' fill='%23F3F4F6'/%3E%3Crect x='150' y='120' width='260' height='150' rx='18' fill='%23111827' opacity='0.85'/%3E%3Crect x='175' y='150' width='210' height='55' rx='10' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='22' fill='%23111827'%3EABC1D23%3C/text%3E%3Ctext x='50%25' y='78%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='14' fill='%23111827' opacity='0.55'%3EPlaca do ve%C3%ADculo%3C/text%3E%3C/svg%3E";
 
+// ================= MODAL =================
+function openModal(title, imgSrc){
+  if (!imgSrc) return;
+  modalTitle.textContent = title || "Foto";
+  modalImg.src = imgSrc;
+  show(photoModal);
+}
+function closeModal(){
+  hide(photoModal);
+  modalImg.src = "";
+}
+modalBackdrop.addEventListener("click", closeModal);
+closeModalBtn.addEventListener("click", closeModal);
+document.addEventListener("keydown", (e)=>{
+  if (e.key === "Escape" && !photoModal.classList.contains("hidden")) closeModal();
+});
+
 // ================= HOME / CHECKLIST =================
 function computeNextStep(){
   if (!payload.rearPhotoBase64) return STEP_REAR;
@@ -173,13 +190,13 @@ function computeNextStep(){
 
 function refreshChecklistUI(){
   const rearDone = !!payload.rearPhotoBase64;
-  docRearMeta.textContent = rearDone ? "Concluído" : "Pendente";
+  docRearMeta.textContent = rearDone ? "Concluído (toque para ver)" : "Pendente";
   docRearBadge.textContent = rearDone ? "✓" : "•";
   docRearBadge.classList.toggle("docCheck--pending", !rearDone);
   docRearThumb.src = rearDone ? payload.rearPhotoBase64 : "";
 
   const plateDone = !!payload.platePhotoBase64;
-  docPlateMeta.textContent = plateDone ? "Concluído" : "Pendente";
+  docPlateMeta.textContent = plateDone ? "Concluído (toque para ver)" : "Pendente";
   docPlateBadge.textContent = plateDone ? "✓" : "•";
   docPlateBadge.classList.toggle("docCheck--pending", !plateDone);
   docPlateThumb.src = plateDone ? payload.platePhotoBase64 : "";
@@ -213,22 +230,19 @@ function goToHome(){
 
 // ================= GUIDE (INSTRUÇÕES) =================
 function applyGuideUI(){
-  // ✅ FIX: garante que o botão não fica travado quando alterna para placa
   guideContinueBtn.disabled = false;
-
   guideTitle.textContent = "É hora da captura de fotos";
 
   if (currentStep === STEP_REAR){
     guideDesc.innerHTML = "Para fotografar a <strong>traseira do veículo</strong>, permita o uso da <strong>localização</strong> e da <strong>câmera</strong>.";
     guideImage.src = rearImg;
     guideImage.onerror = () => { guideImage.src = rearFallbackUrl; };
-    guideContinueBtn.textContent = permissionsReady ? "Abrir câmera" : "Permitir localização e câmera";
   } else {
     guideDesc.innerHTML = "Agora vamos fotografar a <strong>placa do veículo</strong>. Mantenha a placa bem legível e com boa iluminação.";
     guideImage.src = plateSvg;
-    guideContinueBtn.textContent = permissionsReady ? "Abrir câmera" : "Permitir localização e câmera";
   }
 
+  guideContinueBtn.textContent = permissionsReady ? "Abrir câmera" : "Permitir localização e câmera";
   setGuideStatus("");
 }
 
@@ -239,7 +253,6 @@ function goToGuide(){
   hide(blurView);
   hide(successView);
   show(guideView);
-
   applyGuideUI();
 }
 
@@ -293,7 +306,7 @@ function resetCaptureUI(){
   show(takePhotoBtn);
   hide(previewActions);
 
-  // ✅ FIX: garante que o botão "Tirar foto" volta habilitado ao entrar em captura
+  // garante que não trava
   takePhotoBtn.disabled = false;
 
   capturedImage = null;
@@ -332,10 +345,6 @@ function goToCapture(){
 
   applyCaptureUI();
   resetCaptureUI();
-
-  // ✅ redundância saudável: evita estado preso vindo de outras telas
-  takePhotoBtn.disabled = false;
-
   safePlayVideo();
   setCapStatus("Câmera pronta.");
 }
@@ -365,23 +374,6 @@ function goToSuccess(){
 
   console.log("PAYLOAD FINAL:", payload);
 }
-
-// ================= MODAL =================
-function openModal(title, imgSrc){
-  if (!imgSrc) return;
-  modalTitle.textContent = title || "Foto";
-  modalImg.src = imgSrc;
-  show(photoModal);
-}
-function closeModal(){
-  hide(photoModal);
-  modalImg.src = "";
-}
-modalBackdrop.addEventListener("click", closeModal);
-closeModalBtn.addEventListener("click", closeModal);
-document.addEventListener("keydown", (e)=>{
-  if (e.key === "Escape" && !photoModal.classList.contains("hidden")) closeModal();
-});
 
 // ================= BLUR DETECTOR =================
 function computeSharpnessScoreFromCanvas(canvas){
@@ -630,12 +622,23 @@ startFlowBtn.addEventListener("click", ()=>{
   goToGuide();
 });
 
-// Clique nos cards (abre instruções ANTES da câmera)
+// ✅ Home: clicar no item
+// - se já tem foto -> abre modal
+// - se não tem -> vai para instruções
 docRearBtn.addEventListener("click", ()=>{
+  if (payload.rearPhotoBase64){
+    openModal("Traseira do veículo", payload.rearPhotoBase64);
+    return;
+  }
   currentStep = STEP_REAR;
   goToGuide();
 });
+
 docPlateBtn.addEventListener("click", ()=>{
+  if (payload.platePhotoBase64){
+    openModal("Placa do veículo", payload.platePhotoBase64);
+    return;
+  }
   currentStep = STEP_PLATE;
   goToGuide();
 });
@@ -798,7 +801,7 @@ useBtn.addEventListener("click", ()=>{
   if (currentStep === STEP_REAR){
     payload.rearPhotoBase64 = finalPhotoBase64;
     showToast("Traseira capturada");
-    goToHome();
+    goToHome(); // ✅ home já permite visualizar
     return;
   }
 
@@ -808,7 +811,7 @@ useBtn.addEventListener("click", ()=>{
 
     const next = computeNextStep();
     if (next){
-      goToHome();
+      goToHome(); // ✅ home já permite visualizar
       return;
     }
 
