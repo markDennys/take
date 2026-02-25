@@ -3,7 +3,8 @@ const VALID_PASS = "teste";
 
 // Views
 const loginView = document.getElementById("loginView");
-const introView = document.getElementById("introView");
+const homeView = document.getElementById("homeView");
+const guideView = document.getElementById("guideView");
 const captureView = document.getElementById("captureView");
 const blurView = document.getElementById("blurView");
 const successView = document.getElementById("successView");
@@ -14,10 +15,10 @@ const usernameEl = document.getElementById("username");
 const passwordEl = document.getElementById("password");
 const loginError = document.getElementById("loginError");
 
-// Intro UI
-const enableAllBtn = document.getElementById("enableAllBtn");
-const introStatus = document.getElementById("introStatus");
-const logoutBtnIntro = document.getElementById("logoutBtnIntro");
+// Home UI
+const startFlowBtn = document.getElementById("startFlowBtn");
+const homeStatus = document.getElementById("homeStatus");
+const logoutBtnHome = document.getElementById("logoutBtnHome");
 
 // Checklist UI
 const docRearBtn = document.getElementById("docRearBtn");
@@ -29,6 +30,14 @@ const docPlateBtn = document.getElementById("docPlateBtn");
 const docPlateBadge = document.getElementById("docPlateBadge");
 const docPlateMeta = document.getElementById("docPlateMeta");
 const docPlateThumb = document.getElementById("docPlateThumb");
+
+// Guide UI (instruções)
+const guideTitle = document.getElementById("guideTitle");
+const guideDesc = document.getElementById("guideDesc");
+const guideImage = document.getElementById("guideImage");
+const guideContinueBtn = document.getElementById("guideContinueBtn");
+const guideStatus = document.getElementById("guideStatus");
+const backToHomeBtn = document.getElementById("backToHomeBtn");
 
 // Capture UI
 const backBtn = document.getElementById("backBtn");
@@ -67,8 +76,17 @@ const logoutBtnBlur = document.getElementById("logoutBtnBlur");
 // Success
 const rearThumb = document.getElementById("rearThumb");
 const plateThumb = document.getElementById("plateThumb");
+const successRearBtn = document.getElementById("successRearBtn");
+const successPlateBtn = document.getElementById("successPlateBtn");
 const goFormalizationBtn = document.getElementById("goFormalizationBtn");
 const logoutBtnSuccess = document.getElementById("logoutBtnSuccess");
+
+// Modal
+const photoModal = document.getElementById("photoModal");
+const modalBackdrop = document.getElementById("modalBackdrop");
+const closeModalBtn = document.getElementById("closeModalBtn");
+const modalImg = document.getElementById("modalImg");
+const modalTitle = document.getElementById("modalTitle");
 
 // Estado
 let stream = null;
@@ -90,7 +108,7 @@ const payload = {
 let capturedImage = null;
 let finalPhotoBase64 = null;
 
-// ====== BLUR CHECK ======
+// Blur threshold por etapa
 function getBlurThreshold(){
   return currentStep === STEP_PLATE ? 220 : 150;
 }
@@ -110,7 +128,9 @@ let start = { px: 0, py: 0, x: 0, y: 0, w: 0, h: 0 };
 
 function show(el){ el?.classList.remove("hidden"); }
 function hide(el){ el?.classList.add("hidden"); }
-function setIntroStatus(msg){ introStatus.textContent = msg || ""; }
+
+function setHomeStatus(msg){ homeStatus.textContent = msg || ""; }
+function setGuideStatus(msg){ guideStatus.textContent = msg || ""; }
 function setCapStatus(msg){ capStatus.textContent = msg || ""; }
 
 function showToast(message){
@@ -139,7 +159,12 @@ function safePlayVideo(){
   });
 }
 
-// ================= CHECKLIST (HOME) =================
+// ========= IMAGENS DO GUIDE =========
+const rearImg = "rear.png";
+const rearFallbackUrl = "https://cdn.gazetasp.com.br/upload/dn_arquivo/2022/08/novo-porsche-911-gt3-r-traseira.jpg";
+const plateSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='360' viewBox='0 0 560 360'%3E%3Crect width='560' height='360' rx='28' fill='%23F3F4F6'/%3E%3Crect x='150' y='120' width='260' height='150' rx='18' fill='%23111827' opacity='0.85'/%3E%3Crect x='175' y='150' width='210' height='55' rx='10' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='22' fill='%23111827'%3EABC1D23%3C/text%3E%3Ctext x='50%25' y='78%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='14' fill='%23111827' opacity='0.55'%3EPlaca do ve%C3%ADculo%3C/text%3E%3C/svg%3E";
+
+// ================= HOME / CHECKLIST =================
 function computeNextStep(){
   if (!payload.rearPhotoBase64) return STEP_REAR;
   if (!payload.platePhotoBase64) return STEP_PLATE;
@@ -147,14 +172,12 @@ function computeNextStep(){
 }
 
 function refreshChecklistUI(){
-  // traseira
   const rearDone = !!payload.rearPhotoBase64;
   docRearMeta.textContent = rearDone ? "Concluído" : "Pendente";
   docRearBadge.textContent = rearDone ? "✓" : "•";
   docRearBadge.classList.toggle("docCheck--pending", !rearDone);
   docRearThumb.src = rearDone ? payload.rearPhotoBase64 : "";
 
-  // placa
   const plateDone = !!payload.platePhotoBase64;
   docPlateMeta.textContent = plateDone ? "Concluído" : "Pendente";
   docPlateBadge.textContent = plateDone ? "✓" : "•";
@@ -163,15 +186,58 @@ function refreshChecklistUI(){
 
   const next = computeNextStep();
   if (!next){
-    enableAllBtn.textContent = "Tudo concluído";
-    enableAllBtn.disabled = true;
-    setIntroStatus("Você já capturou todos os documentos.");
-    return;
+    startFlowBtn.textContent = "Tudo concluído";
+    startFlowBtn.disabled = true;
+    setHomeStatus("Você já capturou todos os documentos.");
+  } else {
+    startFlowBtn.disabled = false;
+    startFlowBtn.textContent = "Iniciar captura";
+    setHomeStatus("");
+  }
+}
+
+function goToHome(){
+  hide(loginView);
+  hide(guideView);
+  hide(captureView);
+  hide(blurView);
+  hide(successView);
+  show(homeView);
+
+  const next = computeNextStep();
+  if (next) currentStep = next;
+
+  refreshChecklistUI();
+  try{ video.pause(); }catch(_){}
+}
+
+// ================= GUIDE (INSTRUÇÕES) =================
+function applyGuideUI(){
+  guideTitle.textContent = "É hora da captura de fotos";
+
+  if (currentStep === STEP_REAR){
+    guideDesc.innerHTML = "Para fotografar a <strong>traseira do veículo</strong>, permita o uso da <strong>localização</strong> e da <strong>câmera</strong>.";
+    guideImage.src = rearImg;
+    guideImage.onerror = () => { guideImage.src = rearFallbackUrl; };
+    guideContinueBtn.textContent = permissionsReady ? "Abrir câmera" : "Permitir localização e câmera";
+  } else {
+    guideDesc.innerHTML = "Agora vamos fotografar a <strong>placa do veículo</strong>. Mantenha a placa bem legível e com boa iluminação.";
+    guideImage.src = plateSvg;
+    guideContinueBtn.textContent = permissionsReady ? "Abrir câmera" : "Permitir localização e câmera";
   }
 
-  enableAllBtn.disabled = false;
-  enableAllBtn.textContent = permissionsReady ? "Continuar captura" : "Iniciar captura";
-  setIntroStatus(permissionsReady ? "Permissões já concedidas." : "");
+  setGuideStatus("");
+}
+
+function goToGuide(){
+  hide(loginView);
+  hide(homeView);
+  hide(captureView);
+  hide(blurView);
+  hide(successView);
+  show(guideView);
+
+  applyGuideUI();
 }
 
 // ================= PERMISSÕES =================
@@ -216,7 +282,7 @@ async function ensurePermissions(){
   permissionsReady = true;
 }
 
-// ================= NAV/UI =================
+// ================= CAPTURE UI =================
 function resetCaptureUI(){
   show(cameraBox);
   hide(cropBox);
@@ -237,14 +303,9 @@ function resetCaptureUI(){
   confirmCropBtn.disabled = true;
 }
 
-function applyStepUI(){
-  if (capTitle){
-    capTitle.textContent = currentStep === STEP_REAR ? "Captura 1/2" : "Captura 2/2";
-  }
-
-  if (useBtn){
-    useBtn.textContent = currentStep === STEP_REAR ? "Continuar" : "Finalizar";
-  }
+function applyCaptureUI(){
+  if (capTitle) capTitle.textContent = currentStep === STEP_REAR ? "Captura 1/2" : "Captura 2/2";
+  useBtn.textContent = currentStep === STEP_REAR ? "Continuar" : "Finalizar";
 
   if (currentStep === STEP_REAR){
     capSubtitle.textContent = "Traseira do veículo";
@@ -255,29 +316,15 @@ function applyStepUI(){
   }
 }
 
-function goToIntro(){
-  hide(loginView);
-  hide(captureView);
-  hide(blurView);
-  hide(successView);
-  show(introView);
-
-  // define step "natural" (primeiro pendente)
-  const next = computeNextStep();
-  if (next) currentStep = next;
-
-  refreshChecklistUI();
-  try{ video.pause(); }catch(_){}
-}
-
 function goToCapture(){
   hide(loginView);
-  hide(introView);
+  hide(homeView);
+  hide(guideView);
   hide(blurView);
   hide(successView);
   show(captureView);
 
-  applyStepUI();
+  applyCaptureUI();
   resetCaptureUI();
   safePlayVideo();
   setCapStatus("Câmera pronta.");
@@ -285,22 +332,20 @@ function goToCapture(){
 
 function goToBlurScreen(dataUrl, score){
   hide(loginView);
-  hide(introView);
+  hide(homeView);
+  hide(guideView);
   hide(captureView);
   hide(successView);
   show(blurView);
 
   blurPreview.src = dataUrl;
-  if (blurScore){
-    blurScore.textContent = (score != null)
-      ? `Score de nitidez: ${score.toFixed(1)} (mín.: ${getBlurThreshold()})`
-      : "";
-  }
+  blurScore.textContent = `Score de nitidez: ${score.toFixed(1)} (mín.: ${getBlurThreshold()})`;
 }
 
 function goToSuccess(){
   hide(loginView);
-  hide(introView);
+  hide(homeView);
+  hide(guideView);
   hide(captureView);
   hide(blurView);
   show(successView);
@@ -311,12 +356,28 @@ function goToSuccess(){
   console.log("PAYLOAD FINAL:", payload);
 }
 
+// ================= MODAL =================
+function openModal(title, imgSrc){
+  if (!imgSrc) return;
+  modalTitle.textContent = title || "Foto";
+  modalImg.src = imgSrc;
+  show(photoModal);
+}
+function closeModal(){
+  hide(photoModal);
+  modalImg.src = "";
+}
+modalBackdrop.addEventListener("click", closeModal);
+closeModalBtn.addEventListener("click", closeModal);
+document.addEventListener("keydown", (e)=>{
+  if (e.key === "Escape" && !photoModal.classList.contains("hidden")) closeModal();
+});
+
 // ================= BLUR DETECTOR =================
 function computeSharpnessScoreFromCanvas(canvas){
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   const w = canvas.width;
   const h = canvas.height;
-
   const img = ctx.getImageData(0, 0, w, h).data;
 
   const stride = Math.max(1, Math.floor(Math.min(w, h) / 240));
@@ -335,10 +396,7 @@ function computeSharpnessScoreFromCanvas(canvas){
     }
   }
 
-  let sum = 0;
-  let sumSq = 0;
-  let count = 0;
-
+  let sum = 0, sumSq = 0, count = 0;
   for (let y = 1; y < gh-1; y++){
     for (let x = 1; x < gw-1; x++){
       const c = gray[y*gw + x];
@@ -346,7 +404,6 @@ function computeSharpnessScoreFromCanvas(canvas){
       const dn = gray[(y+1)*gw + x];
       const lf = gray[y*gw + (x-1)];
       const rt = gray[y*gw + (x+1)];
-
       const lap = (up + dn + lf + rt) - 4*c;
       sum += lap;
       sumSq += lap*lap;
@@ -371,14 +428,12 @@ function isBlurryFromDataUrl(dataUrl){
       const h = Math.max(1, Math.round(img.naturalHeight * ratio));
 
       const c = document.createElement("canvas");
-      c.width = w;
-      c.height = h;
+      c.width = w; c.height = h;
       c.getContext("2d").drawImage(img, 0, 0, w, h);
 
       const score = computeSharpnessScoreFromCanvas(c);
       resolve({ blurry: score < getBlurThreshold(), score });
     };
-
     img.onerror = () => resolve({ blurry: true, score: 0 });
   });
 }
@@ -394,7 +449,6 @@ function getPointerPos(evt, canvasEl){
 function initCropRect(){
   const cw = cropCanvas.width;
   const ch = cropCanvas.height;
-
   const w = Math.round(cw * CROP_INIT_W_RATIO);
   const h = Math.round(ch * CROP_INIT_H_RATIO);
 
@@ -402,16 +456,13 @@ function initCropRect(){
   cropRect.h = Math.max(CROP_MIN_SIZE, h);
   cropRect.x = Math.round((cw - cropRect.w) / 2);
   cropRect.y = Math.round((ch - cropRect.h) / 2);
-
   clampCrop();
 }
 
 function clampCrop(){
   if (!capturedImage) return;
-
   cropRect.w = Math.max(CROP_MIN_SIZE, Math.min(cropRect.w, cropCanvas.width));
   cropRect.h = Math.max(CROP_MIN_SIZE, Math.min(cropRect.h, cropCanvas.height));
-
   const maxX = cropCanvas.width - cropRect.w;
   const maxY = cropCanvas.height - cropRect.h;
   cropRect.x = Math.max(0, Math.min(cropRect.x, maxX));
@@ -428,7 +479,6 @@ function drawPlainImage(imgEl){
 
 function drawCropOverlay(){
   if (!capturedImage) return;
-
   const ctx = cropCanvas.getContext("2d");
   const cw = cropCanvas.width;
   const ch = cropCanvas.height;
@@ -440,11 +490,7 @@ function drawCropOverlay(){
   ctx.fillRect(0,0,cw,ch);
 
   ctx.clearRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
-  ctx.drawImage(
-    capturedImage,
-    cropRect.x, cropRect.y, cropRect.w, cropRect.h,
-    cropRect.x, cropRect.y, cropRect.w, cropRect.h
-  );
+  ctx.drawImage(capturedImage, cropRect.x, cropRect.y, cropRect.w, cropRect.h, cropRect.x, cropRect.y, cropRect.w, cropRect.h);
 
   ctx.strokeStyle = "rgba(255,255,255,0.95)";
   ctx.lineWidth = 3;
@@ -464,12 +510,10 @@ function pointInRect(px, py, rx, ry, rw, rh){
 
 function getHandleAtPoint(p){
   const hs = HANDLE_SIZE;
-
   const nw = { x: cropRect.x - hs/2, y: cropRect.y - hs/2, w: hs, h: hs };
   const ne = { x: cropRect.x + cropRect.w - hs/2, y: cropRect.y - hs/2, w: hs, h: hs };
   const sw = { x: cropRect.x - hs/2, y: cropRect.y + cropRect.h - hs/2, w: hs, h: hs };
   const se = { x: cropRect.x + cropRect.w - hs/2, y: cropRect.y + cropRect.h - hs/2, w: hs, h: hs };
-
   if (pointInRect(p.x, p.y, nw.x, nw.y, nw.w, nw.h)) return "nw";
   if (pointInRect(p.x, p.y, ne.x, ne.y, ne.w, ne.h)) return "ne";
   if (pointInRect(p.x, p.y, sw.x, sw.y, sw.w, sw.h)) return "sw";
@@ -479,10 +523,8 @@ function getHandleAtPoint(p){
 
 function onPointerDown(evt){
   if (!capturedImage || !cropEnabled) return;
-
   const p = getPointerPos(evt, cropCanvas);
   const handle = getHandleAtPoint(p);
-
   if (handle) dragMode = handle;
   else if (pointInRect(p.x, p.y, cropRect.x, cropRect.y, cropRect.w, cropRect.h)) dragMode = "move";
   else { dragMode = null; return; }
@@ -560,63 +602,60 @@ loginForm.addEventListener("submit",(e)=>{
   if (u === VALID_USER && p === VALID_PASS){
     hide(loginError);
     currentStep = STEP_REAR;
-    goToIntro();
+    goToHome();
   } else {
     loginError.textContent = "Usuário ou senha inválidos.";
     show(loginError);
   }
 });
 
-// Home: iniciar/continuar captura
-enableAllBtn.addEventListener("click", async ()=>{
-  // escolhe sempre o próximo pendente
+// Home: fluxo guiado (abre instruções do próximo pendente)
+startFlowBtn.addEventListener("click", ()=>{
   const next = computeNextStep();
   if (!next){
     goToSuccess();
     return;
   }
   currentStep = next;
+  goToGuide();
+});
 
+// Clique nos cards (abre instruções ANTES da câmera)
+docRearBtn.addEventListener("click", ()=>{
+  currentStep = STEP_REAR;
+  goToGuide();
+});
+docPlateBtn.addEventListener("click", ()=>{
+  currentStep = STEP_PLATE;
+  goToGuide();
+});
+
+// Guide: continuar -> pedir permissões (se precisar) -> abrir câmera
+guideContinueBtn.addEventListener("click", async ()=>{
   if (permissionsReady){
     goToCapture();
     return;
   }
 
-  enableAllBtn.disabled = true;
-  enableAllBtn.textContent = "Aguarde...";
-  setIntroStatus("Solicitando permissões...");
+  guideContinueBtn.disabled = true;
+  guideContinueBtn.textContent = "Aguarde...";
+  setGuideStatus("Solicitando permissões...");
 
   try{
     await ensurePermissions();
     goToCapture();
   }catch{
-    setIntroStatus("Permissão negada ou indisponível.");
-    enableAllBtn.disabled = false;
-    enableAllBtn.textContent = "Iniciar captura";
+    setGuideStatus("Permissão negada ou indisponível.");
+    guideContinueBtn.disabled = false;
+    guideContinueBtn.textContent = "Permitir localização e câmera";
   }
 });
 
-// Clique direto nos cards
-docRearBtn.addEventListener("click", async ()=>{
-  currentStep = STEP_REAR;
-  if (!permissionsReady){
-    enableAllBtn.click();
-    return;
-  }
-  goToCapture();
-});
+// Guide: voltar para home
+backToHomeBtn.addEventListener("click", goToHome);
 
-docPlateBtn.addEventListener("click", async ()=>{
-  currentStep = STEP_PLATE;
-  if (!permissionsReady){
-    enableAllBtn.click();
-    return;
-  }
-  goToCapture();
-});
-
-// Voltar
-backBtn.addEventListener("click", goToIntro);
+// Capture: voltar para guide (não direto home)
+backBtn.addEventListener("click", goToGuide);
 
 // Tirar foto
 takePhotoBtn.addEventListener("click", async ()=>{
@@ -676,7 +715,7 @@ takePhotoBtn.addEventListener("click", async ()=>{
   img.src = dataUrl;
 });
 
-// Tela blur: tentar novamente
+// Blur: tentar novamente volta para captura
 tryAgainBtn.addEventListener("click", ()=>{
   goToCapture();
   showToast("Vamos tentar de novo");
@@ -688,7 +727,6 @@ cropModeBtn.addEventListener("click", ()=>{
 
   cropEnabled = true;
   cropCanvas.classList.add("is-cropping");
-
   cropCanvas.width = capturedImage.naturalWidth;
   cropCanvas.height = capturedImage.naturalHeight;
 
@@ -750,7 +788,7 @@ useBtn.addEventListener("click", ()=>{
   if (currentStep === STEP_REAR){
     payload.rearPhotoBase64 = finalPhotoBase64;
     showToast("Traseira capturada");
-    goToIntro(); // volta pro checklist
+    goToHome();
     return;
   }
 
@@ -758,19 +796,21 @@ useBtn.addEventListener("click", ()=>{
     payload.platePhotoBase64 = finalPhotoBase64;
     showToast("Placa capturada");
 
-    // se ainda falta algo, volta pro checklist
     const next = computeNextStep();
     if (next){
-      goToIntro();
+      goToHome();
       return;
     }
 
     goToSuccess();
-    return;
   }
 });
 
-// botão formalização
+// Success: clicar para ver fotos
+successRearBtn.addEventListener("click", ()=> openModal("Traseira do veículo", payload.rearPhotoBase64));
+successPlateBtn.addEventListener("click", ()=> openModal("Placa do veículo", payload.platePhotoBase64));
+
+// Botão formalização
 goFormalizationBtn.addEventListener("click", ()=>{
   console.log("Seguir para formalização (mock). Payload:", payload);
 });
@@ -786,7 +826,8 @@ function logout(){
   payload.platePhotoBase64 = null;
   sessionStorage.removeItem("poc_location");
 
-  hide(introView);
+  hide(homeView);
+  hide(guideView);
   hide(captureView);
   hide(blurView);
   hide(successView);
@@ -794,27 +835,27 @@ function logout(){
 
   loginForm.reset();
   hide(loginError);
-  setIntroStatus("");
+  setHomeStatus("");
+  setGuideStatus("");
   setCapStatus("");
 
   currentStep = STEP_REAR;
   resetCaptureUI();
-  enableAllBtn.disabled = false;
-  enableAllBtn.textContent = "Iniciar captura";
 }
 
-logoutBtnIntro.addEventListener("click", logout);
+logoutBtnHome.addEventListener("click", logout);
 logoutBtnCap.addEventListener("click", logout);
 logoutBtnSuccess.addEventListener("click", logout);
 logoutBtnBlur.addEventListener("click", logout);
 
 // INIT
 (function init(){
-  hide(introView);
+  hide(homeView);
+  hide(guideView);
   hide(captureView);
   hide(blurView);
   hide(successView);
+  hide(photoModal);
   show(loginView);
-
   resetCaptureUI();
 })();

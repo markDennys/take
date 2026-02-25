@@ -15,6 +15,22 @@
       <div id="toastText" class="toastText">Concluído</div>
     </div>
 
+    <!-- MODAL PREVIEW FOTO (clicar pra ver) -->
+    <div id="photoModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Visualização da foto">
+      <div class="modalBackdrop" id="modalBackdrop"></div>
+      <div class="modalCard" role="document">
+        <div class="modalHeader">
+          <div id="modalTitle" class="modalTitle">Foto</div>
+          <button id="closeModalBtn" class="iconBtn" type="button" aria-label="Fechar">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <img id="modalImg" class="modalImg" alt="Foto capturada" />
+      </div>
+    </div>
+
     <!-- LOGIN -->
     <section id="loginView" class="card" aria-label="Tela de Login">
       <header class="header">
@@ -40,7 +56,7 @@
     </section>
 
     <!-- HOME / CHECKLIST (primeira tela pós-login) -->
-    <section id="introView" class="card hidden" aria-label="Documentos necessários">
+    <section id="homeView" class="card hidden" aria-label="Documentos necessários">
       <header class="header">
         <h1 class="title">Documentos necessários</h1>
         <p class="subtitle">Para seguir, precisamos capturar os itens abaixo.</p>
@@ -77,9 +93,27 @@
       </div>
 
       <div class="stack">
-        <button id="enableAllBtn" class="btn btn-primary">Iniciar captura</button>
-        <div id="introStatus" class="status" role="status" aria-live="polite"></div>
-        <button id="logoutBtnIntro" class="btn btn-ghost" type="button">Sair</button>
+        <button id="startFlowBtn" class="btn btn-primary">Iniciar captura</button>
+        <div id="homeStatus" class="status" role="status" aria-live="polite"></div>
+        <button id="logoutBtnHome" class="btn btn-ghost" type="button">Sair</button>
+      </div>
+    </section>
+
+    <!-- INSTRUÇÕES (igual intro antiga) -->
+    <section id="guideView" class="card hidden" aria-label="Instruções">
+      <header class="header">
+        <h1 id="guideTitle" class="title">É hora da captura de fotos</h1>
+        <p id="guideDesc" class="subtitle"></p>
+      </header>
+
+      <div class="hero">
+        <img id="guideImage" class="car" alt="Ilustração da captura" />
+      </div>
+
+      <div class="stack">
+        <button id="guideContinueBtn" class="btn btn-primary">Permitir localização e câmera</button>
+        <div id="guideStatus" class="status" role="status" aria-live="polite"></div>
+        <button id="backToHomeBtn" class="btn btn-ghost" type="button">Voltar</button>
       </div>
     </section>
 
@@ -172,31 +206,31 @@
       </header>
 
       <div class="docList" aria-label="Lista de documentos">
-        <div class="docItem">
+        <button id="successRearBtn" class="docItem docBtn" type="button" aria-label="Ver foto da traseira">
           <div class="docLeft">
             <div class="docCheck" aria-hidden="true">✓</div>
             <div class="docTexts">
               <div class="docTitle">Traseira do veículo</div>
-              <div class="docMeta">Concluído</div>
+              <div class="docMeta">Toque para ver</div>
             </div>
           </div>
           <div class="docThumb">
             <img id="rearThumb" alt="Miniatura traseira do veículo" />
           </div>
-        </div>
+        </button>
 
-        <div class="docItem">
+        <button id="successPlateBtn" class="docItem docBtn" type="button" aria-label="Ver foto da placa">
           <div class="docLeft">
             <div class="docCheck" aria-hidden="true">✓</div>
             <div class="docTexts">
               <div class="docTitle">Placa do veículo</div>
-              <div class="docMeta">Concluído</div>
+              <div class="docMeta">Toque para ver</div>
             </div>
           </div>
           <div class="docThumb">
             <img id="plateThumb" alt="Miniatura placa do veículo" />
           </div>
-        </div>
+        </button>
       </div>
 
       <div class="stack">
