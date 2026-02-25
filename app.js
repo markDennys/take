@@ -239,7 +239,7 @@ function applyGuideUI(){
     guideImage.onerror = () => { guideImage.src = rearFallbackUrl; };
   } else {
     guideDesc.innerHTML = "Agora vamos fotografar a <strong>placa do veículo</strong>. Mantenha a placa bem legível e com boa iluminação.";
-    guideImage.src = plateSvg;
+    guideImage.src = 'https://s2-autoesporte.glbimg.com/nfnDyg9J06LgT7WTtr_GGQxQbAo=/1200x/smart/filters:cover():strip_icc()/i.s3.glbimg.com/v1/AUTH_cf9d035bf26b4646b105bd958f32089d/internal_photos/bs/2020/h/q/sc8A5kQLCrkoBheEg7xA/2020-06-17-placa-mercosul-1.jpg';
   }
 
   guideContinueBtn.textContent = permissionsReady ? "Abrir câmera" : "Permitir localização e câmera";
