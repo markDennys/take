@@ -36,24 +36,49 @@
         <div id="loginError" class="alert hidden" role="alert"></div>
 
         <button type="submit" class="btn btn-primary">Acessar</button>
-
       </form>
     </section>
 
-    <!-- INTRO / PERMISSÕES -->
-    <section id="introView" class="card hidden" aria-label="Instruções">
+    <!-- HOME / CHECKLIST (primeira tela pós-login) -->
+    <section id="introView" class="card hidden" aria-label="Documentos necessários">
       <header class="header">
-        <h1 id="introTitle" class="title">É hora da captura de fotos</h1>
-        <p id="introDesc" class="subtitle"></p>
+        <h1 class="title">Documentos necessários</h1>
+        <p class="subtitle">Para seguir, precisamos capturar os itens abaixo.</p>
       </header>
 
-      <div class="hero">
-        <img id="introImage" class="car" alt="Ilustração" />
+      <div class="docList" aria-label="Lista de documentos necessários">
+        <!-- Traseira -->
+        <button id="docRearBtn" class="docItem docBtn" type="button" aria-label="Capturar traseira do veículo">
+          <div class="docLeft">
+            <div id="docRearBadge" class="docCheck docCheck--pending" aria-hidden="true">•</div>
+            <div class="docTexts">
+              <div class="docTitle">Traseira do veículo</div>
+              <div id="docRearMeta" class="docMeta">Pendente</div>
+            </div>
+          </div>
+          <div class="docThumb">
+            <img id="docRearThumb" alt="Miniatura traseira do veículo" />
+          </div>
+        </button>
+
+        <!-- Placa -->
+        <button id="docPlateBtn" class="docItem docBtn" type="button" aria-label="Capturar placa do veículo">
+          <div class="docLeft">
+            <div id="docPlateBadge" class="docCheck docCheck--pending" aria-hidden="true">•</div>
+            <div class="docTexts">
+              <div class="docTitle">Placa do veículo</div>
+              <div id="docPlateMeta" class="docMeta">Pendente</div>
+            </div>
+          </div>
+          <div class="docThumb">
+            <img id="docPlateThumb" alt="Miniatura placa do veículo" />
+          </div>
+        </button>
       </div>
 
       <div class="stack">
-        <button id="enableAllBtn" class="btn btn-primary">Permitir localização e câmera</button>
-        <div id="introStatus" class="status" aria-live="polite"></div>
+        <button id="enableAllBtn" class="btn btn-primary">Iniciar captura</button>
+        <div id="introStatus" class="status" role="status" aria-live="polite"></div>
         <button id="logoutBtnIntro" class="btn btn-ghost" type="button">Sair</button>
       </div>
     </section>
@@ -82,19 +107,15 @@
 
       <!-- CAMERA -->
       <div id="cameraBox" class="cameraBox">
-        <video id="video" class="video" playsinline autoplay></video>
+        <video id="video" class="video" playsinline autoplay muted></video>
         <div id="cameraHint" class="cameraHint">---</div>
       </div>
 
       <!-- FOTO/CROP -->
       <div id="cropBox" class="cameraBox hidden">
         <div class="cropBar">
-          <button id="cropModeBtn" class="btn btn-secondary" type="button">
-            Ajustar recorte
-          </button>
-          <button id="confirmCropBtn" class="btn btn-primary" type="button" disabled>
-            Confirmar recorte
-          </button>
+          <button id="cropModeBtn" class="btn btn-secondary" type="button">Ajustar recorte</button>
+          <button id="confirmCropBtn" class="btn btn-primary" type="button" disabled>Confirmar recorte</button>
         </div>
 
         <canvas id="cropCanvas" class="cropCanvas"></canvas>
@@ -102,11 +123,9 @@
       </div>
 
       <div class="stack">
-        <div id="capStatus" class="status" aria-live="polite"></div>
+        <div id="capStatus" class="status" role="status" aria-live="polite"></div>
 
-        <button id="takePhotoBtn" class="btn btn-primary" type="button">
-          Tirar foto
-        </button>
+        <button id="takePhotoBtn" class="btn btn-primary" type="button">Tirar foto</button>
 
         <div id="previewActions" class="row hidden">
           <button id="retakeBtn" class="btn btn-secondary" type="button">Refazer</button>
@@ -115,7 +134,29 @@
       </div>
     </section>
 
-    <!-- SUCCESS (novo layout) -->
+    <!-- BLUR -->
+    <section id="blurView" class="card hidden" aria-label="Imagem sem nitidez">
+      <header class="header">
+        <div class="warnBadge" aria-hidden="true">!</div>
+        <h1 class="title" style="text-align:center; margin-top:10px;">A imagem não ficou nítida</h1>
+        <p class="subtitle" style="text-align:center;">
+          Tente novamente aproximando, estabilizando a câmera e garantindo boa iluminação.
+        </p>
+      </header>
+
+      <div class="hero">
+        <img id="blurPreview" class="blurPreview" alt="Prévia da foto desfocada" />
+      </div>
+
+      <div id="blurScore" class="status" role="status" aria-live="polite" style="text-align:center; margin-top: 8px;"></div>
+
+      <div class="stack">
+        <button id="tryAgainBtn" class="btn btn-primary" type="button">Tentar novamente</button>
+        <button id="logoutBtnBlur" class="btn btn-ghost" type="button">Sair</button>
+      </div>
+    </section>
+
+    <!-- SUCCESS -->
     <section id="successView" class="card hidden" aria-label="Sucesso">
       <header class="successHeader">
         <div class="successBadge" aria-hidden="true">
@@ -162,6 +203,7 @@
         <button id="goFormalizationBtn" class="btn btn-primary" type="button">
           Seguir para formalização
         </button>
+        <button id="logoutBtnSuccess" class="btn btn-ghost" type="button">Sair</button>
       </div>
     </section>
 

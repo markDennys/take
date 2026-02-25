@@ -5,6 +5,7 @@ const VALID_PASS = "teste";
 const loginView = document.getElementById("loginView");
 const introView = document.getElementById("introView");
 const captureView = document.getElementById("captureView");
+const blurView = document.getElementById("blurView");
 const successView = document.getElementById("successView");
 
 // Login
@@ -14,19 +15,27 @@ const passwordEl = document.getElementById("password");
 const loginError = document.getElementById("loginError");
 
 // Intro UI
-const introTitle = document.getElementById("introTitle");
-const introDesc = document.getElementById("introDesc");
-const introImage = document.getElementById("introImage");
-
 const enableAllBtn = document.getElementById("enableAllBtn");
 const introStatus = document.getElementById("introStatus");
 const logoutBtnIntro = document.getElementById("logoutBtnIntro");
+
+// Checklist UI
+const docRearBtn = document.getElementById("docRearBtn");
+const docRearBadge = document.getElementById("docRearBadge");
+const docRearMeta = document.getElementById("docRearMeta");
+const docRearThumb = document.getElementById("docRearThumb");
+
+const docPlateBtn = document.getElementById("docPlateBtn");
+const docPlateBadge = document.getElementById("docPlateBadge");
+const docPlateMeta = document.getElementById("docPlateMeta");
+const docPlateThumb = document.getElementById("docPlateThumb");
 
 // Capture UI
 const backBtn = document.getElementById("backBtn");
 const logoutBtnCap = document.getElementById("logoutBtnCap");
 const capStatus = document.getElementById("capStatus");
 
+const capTitle = document.getElementById("capTitle");
 const capSubtitle = document.getElementById("capSubtitle");
 const cameraHint = document.getElementById("cameraHint");
 
@@ -48,6 +57,12 @@ const useBtn = document.getElementById("useBtn");
 // Toast
 const toast = document.getElementById("toast");
 const toastText = document.getElementById("toastText");
+
+// Blur view
+const blurPreview = document.getElementById("blurPreview");
+const blurScore = document.getElementById("blurScore");
+const tryAgainBtn = document.getElementById("tryAgainBtn");
+const logoutBtnBlur = document.getElementById("logoutBtnBlur");
 
 // Success
 const rearThumb = document.getElementById("rearThumb");
@@ -74,6 +89,11 @@ const payload = {
 // Foto
 let capturedImage = null;
 let finalPhotoBase64 = null;
+
+// ====== BLUR CHECK ======
+function getBlurThreshold(){
+  return currentStep === STEP_PLATE ? 220 : 150;
+}
 
 // Crop settings
 const CROP_INIT_W_RATIO = 0.80;
@@ -119,24 +139,39 @@ function safePlayVideo(){
   });
 }
 
-// ============ CONFIG POR ETAPA ============
-const rearSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='360' viewBox='0 0 560 360'%3E%3Crect width='560' height='360' rx='28' fill='%23F3F4F6'/%3E%3Cpath d='M128 208c9-26 31-44 60-44h168c29 0 51 18 60 44l12 34H116l12-34z' fill='%23111827' opacity='0.85'/%3E%3Cpath d='M196 164l24-44h120l24 44H196z' fill='%23111827' opacity='0.7'/%3E%3Ccircle cx='180' cy='260' r='28' fill='%23111827'/%3E%3Ccircle cx='380' cy='260' r='28' fill='%23111827'/%3E%3Ctext x='50%25' y='72%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='14' fill='%23111827' opacity='0.55'%3ETraseira do ve%C3%ADculo%3C/text%3E%3C/svg%3E";
-const plateSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='360' viewBox='0 0 560 360'%3E%3Crect width='560' height='360' rx='28' fill='%23F3F4F6'/%3E%3Crect x='150' y='120' width='260' height='150' rx='18' fill='%23111827' opacity='0.85'/%3E%3Crect x='175' y='150' width='210' height='55' rx='10' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='22' fill='%23111827'%3EABC1D23%3C/text%3E%3Ctext x='50%25' y='78%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='14' fill='%23111827' opacity='0.55'%3EPlaca do ve%C3%ADculo%3C/text%3E%3C/svg%3E";
+// ================= CHECKLIST (HOME) =================
+function computeNextStep(){
+  if (!payload.rearPhotoBase64) return STEP_REAR;
+  if (!payload.platePhotoBase64) return STEP_PLATE;
+  return null;
+}
 
-function applyStepUI(){
-  introTitle.textContent = "É hora da captura de fotos";
+function refreshChecklistUI(){
+  // traseira
+  const rearDone = !!payload.rearPhotoBase64;
+  docRearMeta.textContent = rearDone ? "Concluído" : "Pendente";
+  docRearBadge.textContent = rearDone ? "✓" : "•";
+  docRearBadge.classList.toggle("docCheck--pending", !rearDone);
+  docRearThumb.src = rearDone ? payload.rearPhotoBase64 : "";
 
-  if (currentStep === STEP_REAR){
-    introDesc.innerHTML = "Para fotografar a <strong>traseira do veículo</strong>, permita o uso da <strong>localização</strong> e da <strong>câmera</strong>.";
-    introImage.src = 'https://cdn.gazetasp.com.br/upload/dn_arquivo/2022/08/novo-porsche-911-gt3-r-traseira.jpg';
-    capSubtitle.textContent = "Traseira do veículo";
-    cameraHint.textContent = "Enquadre a traseira do veículo";
-  } else {
-    introDesc.innerHTML = "Agora vamos fotografar a <strong>placa do veículo</strong>. Mantenha a placa bem legível.";
-    introImage.src = 'https://tse2.mm.bing.net/th/id/OIP.7bCt6pyze1-GTUWjGKrxdAHaE7?rs=1&pid=ImgDetMain&o=7&rm=3';
-    capSubtitle.textContent = "Placa do veículo";
-    cameraHint.textContent = "Enquadre a placa do veículo";
+  // placa
+  const plateDone = !!payload.platePhotoBase64;
+  docPlateMeta.textContent = plateDone ? "Concluído" : "Pendente";
+  docPlateBadge.textContent = plateDone ? "✓" : "•";
+  docPlateBadge.classList.toggle("docCheck--pending", !plateDone);
+  docPlateThumb.src = plateDone ? payload.platePhotoBase64 : "";
+
+  const next = computeNextStep();
+  if (!next){
+    enableAllBtn.textContent = "Tudo concluído";
+    enableAllBtn.disabled = true;
+    setIntroStatus("Você já capturou todos os documentos.");
+    return;
   }
+
+  enableAllBtn.disabled = false;
+  enableAllBtn.textContent = permissionsReady ? "Continuar captura" : "Iniciar captura";
+  setIntroStatus(permissionsReady ? "Permissões já concedidas." : "");
 }
 
 // ================= PERMISSÕES =================
@@ -202,28 +237,43 @@ function resetCaptureUI(){
   confirmCropBtn.disabled = true;
 }
 
+function applyStepUI(){
+  if (capTitle){
+    capTitle.textContent = currentStep === STEP_REAR ? "Captura 1/2" : "Captura 2/2";
+  }
+
+  if (useBtn){
+    useBtn.textContent = currentStep === STEP_REAR ? "Continuar" : "Finalizar";
+  }
+
+  if (currentStep === STEP_REAR){
+    capSubtitle.textContent = "Traseira do veículo";
+    cameraHint.textContent = "Enquadre a traseira do veículo";
+  } else {
+    capSubtitle.textContent = "Placa do veículo";
+    cameraHint.textContent = "Enquadre a placa do veículo";
+  }
+}
+
 function goToIntro(){
   hide(loginView);
   hide(captureView);
+  hide(blurView);
   hide(successView);
   show(introView);
 
-  enableAllBtn.disabled = false;
-  if (permissionsReady){
-    enableAllBtn.textContent = "Continuar captura";
-    setIntroStatus("Permissões já concedidas.");
-  } else {
-    enableAllBtn.textContent = "Permitir localização e câmera";
-    setIntroStatus("");
-  }
+  // define step "natural" (primeiro pendente)
+  const next = computeNextStep();
+  if (next) currentStep = next;
 
-  applyStepUI();
+  refreshChecklistUI();
   try{ video.pause(); }catch(_){}
 }
 
 function goToCapture(){
   hide(loginView);
   hide(introView);
+  hide(blurView);
   hide(successView);
   show(captureView);
 
@@ -233,16 +283,104 @@ function goToCapture(){
   setCapStatus("Câmera pronta.");
 }
 
+function goToBlurScreen(dataUrl, score){
+  hide(loginView);
+  hide(introView);
+  hide(captureView);
+  hide(successView);
+  show(blurView);
+
+  blurPreview.src = dataUrl;
+  if (blurScore){
+    blurScore.textContent = (score != null)
+      ? `Score de nitidez: ${score.toFixed(1)} (mín.: ${getBlurThreshold()})`
+      : "";
+  }
+}
+
 function goToSuccess(){
   hide(loginView);
   hide(introView);
   hide(captureView);
+  hide(blurView);
   show(successView);
 
   rearThumb.src = payload.rearPhotoBase64 || "";
   plateThumb.src = payload.platePhotoBase64 || "";
 
   console.log("PAYLOAD FINAL:", payload);
+}
+
+// ================= BLUR DETECTOR =================
+function computeSharpnessScoreFromCanvas(canvas){
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const w = canvas.width;
+  const h = canvas.height;
+
+  const img = ctx.getImageData(0, 0, w, h).data;
+
+  const stride = Math.max(1, Math.floor(Math.min(w, h) / 240));
+  const gw = Math.floor(w / stride);
+  const gh = Math.floor(h / stride);
+
+  const gray = new Float32Array(gw * gh);
+  let idx = 0;
+  for (let y = 0; y < gh; y++){
+    const sy = y * stride;
+    for (let x = 0; x < gw; x++){
+      const sx = x * stride;
+      const p = (sy * w + sx) * 4;
+      const r = img[p], g = img[p+1], b = img[p+2];
+      gray[idx++] = 0.2126*r + 0.7152*g + 0.0722*b;
+    }
+  }
+
+  let sum = 0;
+  let sumSq = 0;
+  let count = 0;
+
+  for (let y = 1; y < gh-1; y++){
+    for (let x = 1; x < gw-1; x++){
+      const c = gray[y*gw + x];
+      const up = gray[(y-1)*gw + x];
+      const dn = gray[(y+1)*gw + x];
+      const lf = gray[y*gw + (x-1)];
+      const rt = gray[y*gw + (x+1)];
+
+      const lap = (up + dn + lf + rt) - 4*c;
+      sum += lap;
+      sumSq += lap*lap;
+      count++;
+    }
+  }
+
+  const mean = sum / Math.max(1, count);
+  const variance = (sumSq / Math.max(1, count)) - mean*mean;
+  return variance;
+}
+
+function isBlurryFromDataUrl(dataUrl){
+  const img = new Image();
+  img.src = dataUrl;
+
+  return new Promise((resolve)=>{
+    img.onload = () => {
+      const maxSide = 420;
+      const ratio = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+      const w = Math.max(1, Math.round(img.naturalWidth * ratio));
+      const h = Math.max(1, Math.round(img.naturalHeight * ratio));
+
+      const c = document.createElement("canvas");
+      c.width = w;
+      c.height = h;
+      c.getContext("2d").drawImage(img, 0, 0, w, h);
+
+      const score = computeSharpnessScoreFromCanvas(c);
+      resolve({ blurry: score < getBlurThreshold(), score });
+    };
+
+    img.onerror = () => resolve({ blurry: true, score: 0 });
+  });
 }
 
 // ================= CROP =================
@@ -339,7 +477,6 @@ function getHandleAtPoint(p){
   return null;
 }
 
-// Pointer events
 function onPointerDown(evt){
   if (!capturedImage || !cropEnabled) return;
 
@@ -430,8 +567,16 @@ loginForm.addEventListener("submit",(e)=>{
   }
 });
 
-// Intro
+// Home: iniciar/continuar captura
 enableAllBtn.addEventListener("click", async ()=>{
+  // escolhe sempre o próximo pendente
+  const next = computeNextStep();
+  if (!next){
+    goToSuccess();
+    return;
+  }
+  currentStep = next;
+
   if (permissionsReady){
     goToCapture();
     return;
@@ -447,8 +592,27 @@ enableAllBtn.addEventListener("click", async ()=>{
   }catch{
     setIntroStatus("Permissão negada ou indisponível.");
     enableAllBtn.disabled = false;
-    enableAllBtn.textContent = "Permitir localização e câmera";
+    enableAllBtn.textContent = "Iniciar captura";
   }
+});
+
+// Clique direto nos cards
+docRearBtn.addEventListener("click", async ()=>{
+  currentStep = STEP_REAR;
+  if (!permissionsReady){
+    enableAllBtn.click();
+    return;
+  }
+  goToCapture();
+});
+
+docPlateBtn.addEventListener("click", async ()=>{
+  currentStep = STEP_PLATE;
+  if (!permissionsReady){
+    enableAllBtn.click();
+    return;
+  }
+  goToCapture();
 });
 
 // Voltar
@@ -465,12 +629,27 @@ takePhotoBtn.addEventListener("click", async ()=>{
     return;
   }
 
+  takePhotoBtn.disabled = true;
+  setCapStatus("Capturando...");
+
   const c = document.createElement("canvas");
   c.width = video.videoWidth;
   c.height = video.videoHeight;
   c.getContext("2d").drawImage(video, 0, 0, c.width, c.height);
-
   const dataUrl = c.toDataURL("image/jpeg", 0.92);
+
+  const { blurry, score } = await isBlurryFromDataUrl(dataUrl);
+
+  if (blurry){
+    capturedImage = null;
+    finalPhotoBase64 = null;
+    cropEnabled = false;
+
+    takePhotoBtn.disabled = false;
+    setCapStatus(`Imagem sem nitidez (score ${score.toFixed(1)}).`);
+    goToBlurScreen(dataUrl, score);
+    return;
+  }
 
   const img = new Image();
   img.onload = () => {
@@ -492,8 +671,15 @@ takePhotoBtn.addEventListener("click", async ()=>{
 
     cropEnabled = false;
     setCapStatus("Foto capturada. Ajuste o recorte se quiser, ou use a foto.");
+    takePhotoBtn.disabled = false;
   };
   img.src = dataUrl;
+});
+
+// Tela blur: tentar novamente
+tryAgainBtn.addEventListener("click", ()=>{
+  goToCapture();
+  showToast("Vamos tentar de novo");
 });
 
 // Ajustar recorte
@@ -554,7 +740,7 @@ retakeBtn.addEventListener("click", ()=>{
   setCapStatus("Ok. Pode tirar outra foto.");
 });
 
-// Usar foto -> salva etapa -> próximo passo ou sucesso
+// Usar foto
 useBtn.addEventListener("click", ()=>{
   if (!finalPhotoBase64){
     setCapStatus("Nenhuma foto disponível.");
@@ -563,15 +749,22 @@ useBtn.addEventListener("click", ()=>{
 
   if (currentStep === STEP_REAR){
     payload.rearPhotoBase64 = finalPhotoBase64;
-    showToast("Traseira capturada ✓");
-    currentStep = STEP_PLATE;
-    goToIntro();
+    showToast("Traseira capturada");
+    goToIntro(); // volta pro checklist
     return;
   }
 
   if (currentStep === STEP_PLATE){
     payload.platePhotoBase64 = finalPhotoBase64;
-    showToast("Placa capturada ✓");
+    showToast("Placa capturada");
+
+    // se ainda falta algo, volta pro checklist
+    const next = computeNextStep();
+    if (next){
+      goToIntro();
+      return;
+    }
+
     goToSuccess();
     return;
   }
@@ -579,14 +772,10 @@ useBtn.addEventListener("click", ()=>{
 
 // botão formalização
 goFormalizationBtn.addEventListener("click", ()=>{
-  // Aqui você pode integrar com sua rota real.
-  // Exemplo:
-  // window.location.href = "/formalizacao";
   console.log("Seguir para formalização (mock). Payload:", payload);
-  showToast("Indo para formalização…");
 });
 
-// Logout (serve pros 3 lugares)
+// Logout
 function logout(){
   try{ if(stream) stream.getTracks().forEach(t=>t.stop()); }catch(_){}
   stream = null;
@@ -599,6 +788,7 @@ function logout(){
 
   hide(introView);
   hide(captureView);
+  hide(blurView);
   hide(successView);
   show(loginView);
 
@@ -610,20 +800,21 @@ function logout(){
   currentStep = STEP_REAR;
   resetCaptureUI();
   enableAllBtn.disabled = false;
-  enableAllBtn.textContent = "Permitir localização e câmera";
+  enableAllBtn.textContent = "Iniciar captura";
 }
 
 logoutBtnIntro.addEventListener("click", logout);
 logoutBtnCap.addEventListener("click", logout);
 logoutBtnSuccess.addEventListener("click", logout);
+logoutBtnBlur.addEventListener("click", logout);
 
 // INIT
 (function init(){
   hide(introView);
   hide(captureView);
+  hide(blurView);
   hide(successView);
   show(loginView);
 
   resetCaptureUI();
-  applyStepUI();
 })();
