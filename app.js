@@ -358,7 +358,6 @@ function goToBlurScreen(dataUrl, score){
   show(blurView);
 
   blurPreview.src = dataUrl;
-  blurScore.textContent = `Score de nitidez: ${score.toFixed(1)} (mín.: ${getBlurThreshold()})`;
 }
 
 function goToSuccess(){
