@@ -31,7 +31,7 @@ const docPlateBadge = document.getElementById("docPlateBadge");
 const docPlateMeta = document.getElementById("docPlateMeta");
 const docPlateThumb = document.getElementById("docPlateThumb");
 
-// Guide UI (instruções)
+// Guide UI
 const guideTitle = document.getElementById("guideTitle");
 const guideDesc = document.getElementById("guideDesc");
 const guideImage = document.getElementById("guideImage");
@@ -58,6 +58,11 @@ const cropCanvas = document.getElementById("cropCanvas");
 const cropModeBtn = document.getElementById("cropModeBtn");
 const confirmCropBtn = document.getElementById("confirmCropBtn");
 
+// Freeze + loading
+const freezeFrame = document.getElementById("freezeFrame");
+const validateOverlay = document.getElementById("validateOverlay");
+const validateSub = document.getElementById("validateSub");
+
 // Actions
 const previewActions = document.getElementById("previewActions");
 const retakeBtn = document.getElementById("retakeBtn");
@@ -67,11 +72,13 @@ const useBtn = document.getElementById("useBtn");
 const toast = document.getElementById("toast");
 const toastText = document.getElementById("toastText");
 
-// Blur view
+// Issue view (blur / conteúdo)
 const blurPreview = document.getElementById("blurPreview");
 const blurScore = document.getElementById("blurScore");
 const tryAgainBtn = document.getElementById("tryAgainBtn");
 const logoutBtnBlur = document.getElementById("logoutBtnBlur");
+const issueTitle = document.getElementById("issueTitle");
+const issueDesc = document.getElementById("issueDesc");
 
 // Success
 const rearThumb = document.getElementById("rearThumb");
@@ -108,10 +115,15 @@ const payload = {
 let capturedImage = null;
 let finalPhotoBase64 = null;
 
-// Blur threshold por etapa
+// ====== BLUR THRESHOLD ======
 function getBlurThreshold(){
   return currentStep === STEP_PLATE ? 220 : 150;
 }
+
+// ====== CONTENT CHECK ======
+let cocoModel = null;
+const CAR_MIN_SCORE = 0.40;
+const PLATE_REGEX = /[A-Z]{3}\d[A-Z0-9]\d{2}|[A-Z]{3}\d{4}/i;
 
 // Crop settings
 const CROP_INIT_W_RATIO = 0.80;
@@ -159,10 +171,11 @@ function safePlayVideo(){
   });
 }
 
-// ========= IMAGENS DO GUIDE =========
+// ========= GUIDE IMAGENS =========
 const rearImg = "rear.png";
 const rearFallbackUrl = "https://cdn.gazetasp.com.br/upload/dn_arquivo/2022/08/novo-porsche-911-gt3-r-traseira.jpg";
-const plateSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='360' viewBox='0 0 560 360'%3E%3Crect width='560' height='360' rx='28' fill='%23F3F4F6'/%3E%3Crect x='150' y='120' width='260' height='150' rx='18' fill='%23111827' opacity='0.85'/%3E%3Crect x='175' y='150' width='210' height='55' rx='10' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='22' fill='%23111827'%3EABC1D23%3C/text%3E%3Ctext x='50%25' y='78%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='14' fill='%23111827' opacity='0.55'%3EPlaca do ve%C3%ADculo%3C/text%3E%3C/svg%3E";
+const plateSvg =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='360' viewBox='0 0 560 360'%3E%3Crect width='560' height='360' rx='28' fill='%23F3F4F6'/%3E%3Crect x='150' y='120' width='260' height='150' rx='18' fill='%23111827' opacity='0.85'/%3E%3Crect x='175' y='150' width='210' height='55' rx='10' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='22' fill='%23111827'%3EABC1D23%3C/text%3E%3Ctext x='50%25' y='78%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='14' fill='%23111827' opacity='0.55'%3EPlaca do ve%C3%ADculo%3C/text%3E%3C/svg%3E";
 
 // ================= MODAL =================
 function openModal(title, imgSrc){
@@ -180,6 +193,53 @@ closeModalBtn.addEventListener("click", closeModal);
 document.addEventListener("keydown", (e)=>{
   if (e.key === "Escape" && !photoModal.classList.contains("hidden")) closeModal();
 });
+
+// ================= FREEZE + LOADING =================
+function startValidationUI(dataUrl, subText){
+  // trava botões
+  takePhotoBtn.disabled = true;
+  backBtn.disabled = true;
+  logoutBtnCap.disabled = true;
+
+  // congela vídeo na foto
+  freezeFrame.src = dataUrl;
+  show(freezeFrame);
+  hide(video);
+
+  // overlay loading
+  validateSub.textContent = subText || "Aguarde";
+  show(validateOverlay);
+}
+
+function stopValidationUI(){
+  hide(validateOverlay);
+
+  // volta pro vídeo (caso continue na captura)
+  hide(freezeFrame);
+  freezeFrame.src = "";
+
+  show(video);
+
+  // destrava botões
+  takePhotoBtn.disabled = false;
+  backBtn.disabled = false;
+  logoutBtnCap.disabled = false;
+}
+
+// ================= ISSUE VIEW =================
+function showIssueScreen({ title, desc, dataUrl, metaText }){
+  hide(loginView);
+  hide(homeView);
+  hide(guideView);
+  hide(captureView);
+  hide(successView);
+  show(blurView);
+
+  issueTitle.textContent = title || "Houve um problema";
+  issueDesc.textContent = desc || "Tente novamente.";
+  blurPreview.src = dataUrl || "";
+  blurScore.textContent = metaText || "";
+}
 
 // ================= HOME / CHECKLIST =================
 function computeNextStep(){
@@ -228,17 +288,19 @@ function goToHome(){
   try{ video.pause(); }catch(_){}
 }
 
-// ================= GUIDE (INSTRUÇÕES) =================
+// ================= GUIDE =================
 function applyGuideUI(){
   guideContinueBtn.disabled = false;
   guideTitle.textContent = "É hora da captura de fotos";
 
   if (currentStep === STEP_REAR){
-    guideDesc.innerHTML = "Para fotografar a <strong>traseira do veículo</strong>, permita o uso da <strong>localização</strong> e da <strong>câmera</strong>.";
+    guideDesc.innerHTML =
+      "Para fotografar a <strong>traseira do veículo</strong>, permita o uso da <strong>localização</strong> e da <strong>câmera</strong>.";
     guideImage.src = rearImg;
     guideImage.onerror = () => { guideImage.src = rearFallbackUrl; };
   } else {
-    guideDesc.innerHTML = "Agora vamos fotografar a <strong>placa do veículo</strong>. Mantenha a placa bem legível e com boa iluminação.";
+    guideDesc.innerHTML =
+      "Agora vamos fotografar a <strong>placa do veículo</strong>. Mantenha a placa bem legível e com boa iluminação.";
     guideImage.src = 'https://s2-autoesporte.glbimg.com/nfnDyg9J06LgT7WTtr_GGQxQbAo=/1200x/smart/filters:cover():strip_icc()/i.s3.glbimg.com/v1/AUTH_cf9d035bf26b4646b105bd958f32089d/internal_photos/bs/2020/h/q/sc8A5kQLCrkoBheEg7xA/2020-06-17-placa-mercosul-1.jpg';
   }
 
@@ -306,9 +368,6 @@ function resetCaptureUI(){
   show(takePhotoBtn);
   hide(previewActions);
 
-  // garante que não trava
-  takePhotoBtn.disabled = false;
-
   capturedImage = null;
   finalPhotoBase64 = null;
 
@@ -320,9 +379,22 @@ function resetCaptureUI(){
   cropModeBtn.disabled = true;
   cropModeBtn.textContent = "Ajustar recorte";
   confirmCropBtn.disabled = true;
+
+  // limpa estado de validação
+  hide(validateOverlay);
+  hide(freezeFrame);
+  freezeFrame.src = "";
+  show(video);
+
+  // destrava
+  takePhotoBtn.disabled = false;
+  backBtn.disabled = false;
+  logoutBtnCap.disabled = false;
 }
 
 function applyCaptureUI(){
+  document.body.classList.toggle("step-plate", currentStep === STEP_PLATE);
+
   if (capTitle) capTitle.textContent = currentStep === STEP_REAR ? "Captura 1/2" : "Captura 2/2";
   useBtn.textContent = currentStep === STEP_REAR ? "Continuar" : "Finalizar";
 
@@ -331,7 +403,7 @@ function applyCaptureUI(){
     cameraHint.textContent = "Enquadre a traseira do veículo";
   } else {
     capSubtitle.textContent = "Placa do veículo";
-    cameraHint.textContent = "Enquadre a placa do veículo";
+    cameraHint.textContent = "Centralize a placa no quadrado";
   }
 }
 
@@ -347,17 +419,6 @@ function goToCapture(){
   resetCaptureUI();
   safePlayVideo();
   setCapStatus("Câmera pronta.");
-}
-
-function goToBlurScreen(dataUrl, score){
-  hide(loginView);
-  hide(homeView);
-  hide(guideView);
-  hide(captureView);
-  hide(successView);
-  show(blurView);
-
-  blurPreview.src = dataUrl;
 }
 
 function goToSuccess(){
@@ -379,6 +440,7 @@ function computeSharpnessScoreFromCanvas(canvas){
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   const w = canvas.width;
   const h = canvas.height;
+
   const img = ctx.getImageData(0, 0, w, h).data;
 
   const stride = Math.max(1, Math.floor(Math.min(w, h) / 240));
@@ -397,7 +459,10 @@ function computeSharpnessScoreFromCanvas(canvas){
     }
   }
 
-  let sum = 0, sumSq = 0, count = 0;
+  let sum = 0;
+  let sumSq = 0;
+  let count = 0;
+
   for (let y = 1; y < gh-1; y++){
     for (let x = 1; x < gw-1; x++){
       const c = gray[y*gw + x];
@@ -429,14 +494,93 @@ function isBlurryFromDataUrl(dataUrl){
       const h = Math.max(1, Math.round(img.naturalHeight * ratio));
 
       const c = document.createElement("canvas");
-      c.width = w; c.height = h;
+      c.width = w;
+      c.height = h;
       c.getContext("2d").drawImage(img, 0, 0, w, h);
 
       const score = computeSharpnessScoreFromCanvas(c);
       resolve({ blurry: score < getBlurThreshold(), score });
     };
-    img.onerror = () => resolve({ blurry: true, score: 0 });
+
+    img.onerror = () => resolve({ blurry: false, score: 9999 });
   });
+}
+
+// ================= CONTENT DETECTORS =================
+function dataUrlToImage(dataUrl){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = ()=> resolve(img);
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
+async function ensureCocoModel(){
+  if (cocoModel) return cocoModel;
+  cocoModel = await cocoSsd.load();
+  return cocoModel;
+}
+
+async function detectCarFromDataUrl(dataUrl){
+  const model = await ensureCocoModel();
+  const img = await dataUrlToImage(dataUrl);
+
+  const predictions = await model.detect(img);
+  const best = predictions
+    .filter(p => ["car","truck","bus","motorcycle"].includes(p.class))
+    .sort((a,b)=> b.score - a.score)[0];
+
+  return { hasCar: !!best && best.score >= CAR_MIN_SCORE, best: best || null };
+}
+
+function drawCenterCropForPlate(img, outSize = 640){
+  const c = document.createElement("canvas");
+  const ctx = c.getContext("2d");
+
+  const w = img.naturalWidth;
+  const h = img.naturalHeight;
+
+  const cropW = Math.round(w * 0.72);
+  const cropH = Math.round(h * 0.42);
+
+  const sx = Math.round((w - cropW) / 2);
+  const sy = Math.round((h - cropH) / 2);
+
+  c.width = outSize;
+  c.height = Math.round((outSize * cropH) / cropW);
+
+  ctx.drawImage(img, sx, sy, cropW, cropH, 0, 0, c.width, c.height);
+
+  // binarização simples
+  const imgData = ctx.getImageData(0,0,c.width,c.height);
+  const d = imgData.data;
+  for (let i=0; i<d.length; i+=4){
+    const r=d[i], g=d[i+1], b=d[i+2];
+    const lum = 0.2126*r + 0.7152*g + 0.0722*b;
+    const v = lum > 140 ? 255 : 0;
+    d[i]=d[i+1]=d[i+2]=v;
+  }
+  ctx.putImageData(imgData,0,0);
+
+  return c;
+}
+
+async function detectPlateFromDataUrl(dataUrl){
+  const img = await dataUrlToImage(dataUrl);
+  const plateCanvas = drawCenterCropForPlate(img, 640);
+
+  const { data } = await Tesseract.recognize(
+    plateCanvas,
+    "eng",
+    { tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" }
+  );
+
+  const raw = (data?.text || "").toUpperCase();
+  const compact = raw.replace(/[^A-Z0-9]/g, "");
+  const match = compact.match(PLATE_REGEX);
+
+  return { hasPlate: !!match, plateLike: match ? match[0] : null };
 }
 
 // ================= CROP =================
@@ -450,6 +594,7 @@ function getPointerPos(evt, canvasEl){
 function initCropRect(){
   const cw = cropCanvas.width;
   const ch = cropCanvas.height;
+
   const w = Math.round(cw * CROP_INIT_W_RATIO);
   const h = Math.round(ch * CROP_INIT_H_RATIO);
 
@@ -457,13 +602,16 @@ function initCropRect(){
   cropRect.h = Math.max(CROP_MIN_SIZE, h);
   cropRect.x = Math.round((cw - cropRect.w) / 2);
   cropRect.y = Math.round((ch - cropRect.h) / 2);
+
   clampCrop();
 }
 
 function clampCrop(){
   if (!capturedImage) return;
+
   cropRect.w = Math.max(CROP_MIN_SIZE, Math.min(cropRect.w, cropCanvas.width));
   cropRect.h = Math.max(CROP_MIN_SIZE, Math.min(cropRect.h, cropCanvas.height));
+
   const maxX = cropCanvas.width - cropRect.w;
   const maxY = cropCanvas.height - cropRect.h;
   cropRect.x = Math.max(0, Math.min(cropRect.x, maxX));
@@ -480,6 +628,7 @@ function drawPlainImage(imgEl){
 
 function drawCropOverlay(){
   if (!capturedImage) return;
+
   const ctx = cropCanvas.getContext("2d");
   const cw = cropCanvas.width;
   const ch = cropCanvas.height;
@@ -491,7 +640,11 @@ function drawCropOverlay(){
   ctx.fillRect(0,0,cw,ch);
 
   ctx.clearRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
-  ctx.drawImage(capturedImage, cropRect.x, cropRect.y, cropRect.w, cropRect.h, cropRect.x, cropRect.y, cropRect.w, cropRect.h);
+  ctx.drawImage(
+    capturedImage,
+    cropRect.x, cropRect.y, cropRect.w, cropRect.h,
+    cropRect.x, cropRect.y, cropRect.w, cropRect.h
+  );
 
   ctx.strokeStyle = "rgba(255,255,255,0.95)";
   ctx.lineWidth = 3;
@@ -511,10 +664,12 @@ function pointInRect(px, py, rx, ry, rw, rh){
 
 function getHandleAtPoint(p){
   const hs = HANDLE_SIZE;
+
   const nw = { x: cropRect.x - hs/2, y: cropRect.y - hs/2, w: hs, h: hs };
   const ne = { x: cropRect.x + cropRect.w - hs/2, y: cropRect.y - hs/2, w: hs, h: hs };
   const sw = { x: cropRect.x - hs/2, y: cropRect.y + cropRect.h - hs/2, w: hs, h: hs };
   const se = { x: cropRect.x + cropRect.w - hs/2, y: cropRect.y + cropRect.h - hs/2, w: hs, h: hs };
+
   if (pointInRect(p.x, p.y, nw.x, nw.y, nw.w, nw.h)) return "nw";
   if (pointInRect(p.x, p.y, ne.x, ne.y, ne.w, ne.h)) return "ne";
   if (pointInRect(p.x, p.y, sw.x, sw.y, sw.w, sw.h)) return "sw";
@@ -524,8 +679,10 @@ function getHandleAtPoint(p){
 
 function onPointerDown(evt){
   if (!capturedImage || !cropEnabled) return;
+
   const p = getPointerPos(evt, cropCanvas);
   const handle = getHandleAtPoint(p);
+
   if (handle) dragMode = handle;
   else if (pointInRect(p.x, p.y, cropRect.x, cropRect.y, cropRect.w, cropRect.h)) dragMode = "move";
   else { dragMode = null; return; }
@@ -610,7 +767,7 @@ loginForm.addEventListener("submit",(e)=>{
   }
 });
 
-// Home: fluxo guiado (abre instruções do próximo pendente)
+// Home: fluxo guiado
 startFlowBtn.addEventListener("click", ()=>{
   const next = computeNextStep();
   if (!next){
@@ -621,9 +778,7 @@ startFlowBtn.addEventListener("click", ()=>{
   goToGuide();
 });
 
-// ✅ Home: clicar no item
-// - se já tem foto -> abre modal
-// - se não tem -> vai para instruções
+// Home: clicar no item
 docRearBtn.addEventListener("click", ()=>{
   if (payload.rearPhotoBase64){
     openModal("Traseira do veículo", payload.rearPhotoBase64);
@@ -642,7 +797,7 @@ docPlateBtn.addEventListener("click", ()=>{
   goToGuide();
 });
 
-// Guide: continuar -> pedir permissões (se precisar) -> abrir câmera
+// Guide: continuar
 guideContinueBtn.addEventListener("click", async ()=>{
   if (permissionsReady){
     goToCapture();
@@ -663,13 +818,17 @@ guideContinueBtn.addEventListener("click", async ()=>{
   }
 });
 
-// Guide: voltar para home
+// Guide: voltar
 backToHomeBtn.addEventListener("click", goToHome);
 
-// Capture: voltar para guide (não direto home)
-backBtn.addEventListener("click", goToGuide);
+// Capture: voltar
+backBtn.addEventListener("click", ()=>{
+  // se estiver validando, ignora
+  if (!validateOverlay.classList.contains("hidden")) return;
+  goToGuide();
+});
 
-// Tirar foto
+// Tirar foto (com freeze + loading)
 takePhotoBtn.addEventListener("click", async ()=>{
   if (!video.videoWidth || !video.videoHeight){
     setCapStatus("Carregando câmera...");
@@ -680,7 +839,6 @@ takePhotoBtn.addEventListener("click", async ()=>{
     return;
   }
 
-  takePhotoBtn.disabled = true;
   setCapStatus("Capturando...");
 
   const c = document.createElement("canvas");
@@ -689,45 +847,95 @@ takePhotoBtn.addEventListener("click", async ()=>{
   c.getContext("2d").drawImage(video, 0, 0, c.width, c.height);
   const dataUrl = c.toDataURL("image/jpeg", 0.92);
 
-  const { blurry, score } = await isBlurryFromDataUrl(dataUrl);
+  // ✅ congela e mostra loading imediatamente
+  startValidationUI(dataUrl, "Checando nitidez...");
 
-  if (blurry){
-    capturedImage = null;
-    finalPhotoBase64 = null;
-    cropEnabled = false;
+  try{
+    // 1) Nitidez
+    const { blurry, score } = await isBlurryFromDataUrl(dataUrl);
+    if (blurry){
+      stopValidationUI();
+      showIssueScreen({
+        title: "A imagem não ficou nítida",
+        desc: "Tente novamente aproximando, estabilizando a câmera e garantindo boa iluminação.",
+        dataUrl,
+        metaText: `Score de nitidez: ${score.toFixed(1)} (mín.: ${getBlurThreshold()})`
+      });
+      return;
+    }
 
-    takePhotoBtn.disabled = false;
-    setCapStatus(`Imagem sem nitidez (score ${score.toFixed(1)}).`);
-    goToBlurScreen(dataUrl, score);
-    return;
+    // 2) Conteúdo
+    validateSub.textContent = "Validando conteúdo...";
+
+    if (currentStep === STEP_REAR){
+      const res = await detectCarFromDataUrl(dataUrl);
+      if (!res.hasCar){
+        stopValidationUI();
+        showIssueScreen({
+          title: "Não identificamos um veículo na imagem",
+          desc: "Enquadre melhor a traseira do veículo (mais próximo e centralizado) e tente novamente.",
+          dataUrl,
+          metaText: "Dica: evite fotografar ambiente sem o carro."
+        });
+        return;
+      }
+    }
+
+    if (currentStep === STEP_PLATE){
+      validateSub.textContent = "Lendo placa...";
+      const plateRes = await detectPlateFromDataUrl(dataUrl);
+      if (!plateRes.hasPlate){
+        stopValidationUI();
+        showIssueScreen({
+          title: "Não identificamos uma placa legível",
+          desc: "Aproxime, centralize a placa no quadrado e garanta boa iluminação. Evite reflexos.",
+          dataUrl,
+          metaText: "Dica: limpe a lente e reduza o tremor."
+        });
+        return;
+      }
+    }
+
+    // OK -> vai para preview/crop
+    validateSub.textContent = "Preparando prévia...";
+    const img = new Image();
+    img.onload = () => {
+      stopValidationUI();
+
+      capturedImage = img;
+      finalPhotoBase64 = dataUrl;
+
+      hide(cameraBox);
+      show(cropBox);
+
+      cropCanvas.classList.remove("is-cropping");
+      drawPlainImage(img);
+
+      hide(takePhotoBtn);
+      show(previewActions);
+
+      cropModeBtn.disabled = false;
+      cropModeBtn.textContent = "Ajustar recorte";
+      confirmCropBtn.disabled = true;
+
+      cropEnabled = false;
+      setCapStatus("Foto capturada. Ajuste o recorte se quiser, ou use a foto.");
+    };
+    img.src = dataUrl;
+
+  } catch (e){
+    console.warn("Falha na validação:", e);
+    stopValidationUI();
+    showIssueScreen({
+      title: "Não foi possível validar a foto",
+      desc: "Tente novamente. Se o problema persistir, verifique sua conexão e permissões.",
+      dataUrl,
+      metaText: ""
+    });
   }
-
-  const img = new Image();
-  img.onload = () => {
-    capturedImage = img;
-    finalPhotoBase64 = dataUrl;
-
-    hide(cameraBox);
-    show(cropBox);
-
-    cropCanvas.classList.remove("is-cropping");
-    drawPlainImage(img);
-
-    hide(takePhotoBtn);
-    show(previewActions);
-
-    cropModeBtn.disabled = false;
-    cropModeBtn.textContent = "Ajustar recorte";
-    confirmCropBtn.disabled = true;
-
-    cropEnabled = false;
-    setCapStatus("Foto capturada. Ajuste o recorte se quiser, ou use a foto.");
-    takePhotoBtn.disabled = false;
-  };
-  img.src = dataUrl;
 });
 
-// Blur: tentar novamente volta para captura
+// Tela erro: tentar novamente
 tryAgainBtn.addEventListener("click", ()=>{
   goToCapture();
   showToast("Vamos tentar de novo");
@@ -739,6 +947,7 @@ cropModeBtn.addEventListener("click", ()=>{
 
   cropEnabled = true;
   cropCanvas.classList.add("is-cropping");
+
   cropCanvas.width = capturedImage.naturalWidth;
   cropCanvas.height = capturedImage.naturalHeight;
 
@@ -800,7 +1009,7 @@ useBtn.addEventListener("click", ()=>{
   if (currentStep === STEP_REAR){
     payload.rearPhotoBase64 = finalPhotoBase64;
     showToast("Traseira capturada");
-    goToHome(); // ✅ home já permite visualizar
+    goToHome();
     return;
   }
 
@@ -810,7 +1019,7 @@ useBtn.addEventListener("click", ()=>{
 
     const next = computeNextStep();
     if (next){
-      goToHome(); // ✅ home já permite visualizar
+      goToHome();
       return;
     }
 
@@ -818,7 +1027,7 @@ useBtn.addEventListener("click", ()=>{
   }
 });
 
-// Success: clicar para ver fotos
+// Success: visualizar fotos
 successRearBtn.addEventListener("click", ()=> openModal("Traseira do veículo", payload.rearPhotoBase64));
 successPlateBtn.addEventListener("click", ()=> openModal("Placa do veículo", payload.platePhotoBase64));
 
@@ -838,11 +1047,14 @@ function logout(){
   payload.platePhotoBase64 = null;
   sessionStorage.removeItem("poc_location");
 
+  document.body.classList.remove("step-plate");
+
   hide(homeView);
   hide(guideView);
   hide(captureView);
   hide(blurView);
   hide(successView);
+  hide(photoModal);
   show(loginView);
 
   loginForm.reset();
@@ -869,5 +1081,7 @@ logoutBtnBlur.addEventListener("click", logout);
   hide(successView);
   hide(photoModal);
   show(loginView);
+
+  document.body.classList.remove("step-plate");
   resetCaptureUI();
 })();
