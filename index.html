@@ -1,27 +1,265 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>POC Captura Inteligente</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>POC Captura de Fotos</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <main class="screen">
 
-<div class="container">
-  <h1>Captura do Veículo</h1>
+    <!-- TOAST -->
+    <div id="toast" class="toast hidden" role="status" aria-live="polite">
+      <div class="toastIcon" aria-hidden="true">✓</div>
+      <div id="toastText" class="toastText">Concluído</div>
+    </div>
 
-  <div class="camera-box">
-    <video id="video" autoplay playsinline></video>
-    <canvas id="canvas"></canvas>
-  </div>
+    <!-- LOGIN -->
+    <section id="loginView" class="card" aria-label="Tela de Login">
+      <header class="header">
+        <h1 class="title">Entrar</h1>
+        <p class="subtitle">Use suas credenciais para acessar a POC.</p>
+      </header>
 
-  <p id="instruction">Movimente a câmera lentamente...</p>
+      <form id="loginForm" class="form">
+        <label class="field">
+          <span class="label">Usuário</span>
+          <input id="username" class="input" type="text" autocomplete="username" placeholder="Digite seu usuário" required />
+        </label>
 
-  <button id="captureBtn">Capturar Foto</button>
+        <label class="field">
+          <span class="label">Senha</span>
+          <input id="password" class="input" type="password" autocomplete="current-password" placeholder="Digite sua senha" required />
+        </label>
 
-  <div id="loading" class="hidden">Validando imagem...</div>
-</div>
+        <div id="loginError" class="alert hidden" role="alert"></div>
 
-<script src="script.js"></script>
+        <button type="submit" class="btn btn-primary">Acessar</button>
+      </form>
+    </section>
+
+    <!-- HOME (CHECKLIST) -->
+    <section id="homeView" class="card hidden" aria-label="Checklist">
+      <header class="header">
+        <h1 class="title">Documentos para captura</h1>
+        <p class="subtitle">Toque em um item para capturar ou visualizar a foto.</p>
+      </header>
+
+      <div class="docList" aria-label="Lista de documentos">
+        <button id="docRearBtn" class="docItem docBtn" type="button">
+          <div class="docLeft">
+            <div id="docRearBadge" class="docCheck docCheck--pending" aria-hidden="true">•</div>
+            <div class="docTexts">
+              <div class="docTitle">Traseira do veículo</div>
+              <div id="docRearMeta" class="docMeta">Pendente</div>
+            </div>
+          </div>
+          <div class="docThumb">
+            <img id="docRearThumb" alt="Miniatura traseira do veículo" />
+          </div>
+        </button>
+
+        <button id="docPlateBtn" class="docItem docBtn" type="button">
+          <div class="docLeft">
+            <div id="docPlateBadge" class="docCheck docCheck--pending" aria-hidden="true">•</div>
+            <div class="docTexts">
+              <div class="docTitle">Placa do veículo</div>
+              <div id="docPlateMeta" class="docMeta">Pendente</div>
+            </div>
+          </div>
+          <div class="docThumb">
+            <img id="docPlateThumb" alt="Miniatura placa do veículo" />
+          </div>
+        </button>
+      </div>
+
+      <div class="stack">
+        <button id="startFlowBtn" class="btn btn-primary" type="button">Iniciar captura</button>
+        <div id="homeStatus" class="status" aria-live="polite"></div>
+        <button id="logoutBtnHome" class="btn btn-ghost" type="button">Sair</button>
+      </div>
+    </section>
+
+    <!-- GUIDE / INSTRUÇÕES -->
+    <section id="guideView" class="card hidden" aria-label="Instruções">
+      <header class="header">
+        <h1 id="guideTitle" class="title">É hora da captura de fotos</h1>
+        <p id="guideDesc" class="subtitle"></p>
+      </header>
+
+      <div class="hero">
+        <img id="guideImage" class="car" alt="Ilustração" />
+      </div>
+
+      <div class="stack">
+        <button id="guideContinueBtn" class="btn btn-primary" type="button">Permitir localização e câmera</button>
+        <div id="guideStatus" class="status" aria-live="polite"></div>
+        <button id="backToHomeBtn" class="btn btn-ghost" type="button">Voltar</button>
+      </div>
+    </section>
+
+    <!-- CAPTURA -->
+    <section id="captureView" class="card hidden" aria-label="Captura">
+      <header class="capHeader">
+        <button id="backBtn" class="iconBtn" type="button" aria-label="Voltar">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <div class="capTitles">
+          <div id="capTitle" class="capTitle">Captura</div>
+          <div id="capSubtitle" class="capSubtitle">---</div>
+        </div>
+
+        <button id="logoutBtnCap" class="iconBtn" type="button" aria-label="Sair">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M10 7V6a2 2 0 012-2h7a2 2 0 012 2v12a2 2 0 01-2 2h-7a2 2 0 01-2-2v-1" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M15 12H3m0 0l3-3m-3 3l3 3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </header>
+
+      <!-- CAMERA -->
+      <div id="cameraBox" class="cameraBox">
+        <video id="video" class="video" playsinline autoplay></video>
+
+        <!-- ✅ FREEZE FRAME (mostra a foto tirada durante validação) -->
+        <img id="freezeFrame" class="freezeFrame hidden" alt="Prévia da foto capturada" />
+
+        <!-- ✅ LOADING OVERLAY -->
+        <div id="validateOverlay" class="validateOverlay hidden" aria-live="polite" aria-busy="true">
+          <div class="spinner" aria-hidden="true"></div>
+          <div class="validateText">
+            <div class="validateTitle">Validando...</div>
+            <div id="validateSub" class="validateSub">Aguarde</div>
+          </div>
+        </div>
+
+        <div id="cameraHint" class="cameraHint">---</div>
+      </div>
+
+      <!-- FOTO/CROP -->
+      <div id="cropBox" class="cameraBox hidden">
+        <div class="cropBar">
+          <button id="cropModeBtn" class="btn btn-secondary" type="button">Ajustar recorte</button>
+          <button id="confirmCropBtn" class="btn btn-primary" type="button" disabled>Confirmar recorte</button>
+        </div>
+
+        <canvas id="cropCanvas" class="cropCanvas"></canvas>
+        <div class="cameraHint">Recorte opcional</div>
+      </div>
+
+      <div class="stack">
+        <div id="capStatus" class="status" aria-live="polite"></div>
+
+        <button id="takePhotoBtn" class="btn btn-primary" type="button">Tirar foto</button>
+
+        <div id="previewActions" class="row hidden">
+          <button id="retakeBtn" class="btn btn-secondary" type="button">Refazer</button>
+          <button id="useBtn" class="btn btn-primary" type="button">Usar foto</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ERRO (NITIDEZ / CONTEÚDO) -->
+    <section id="blurView" class="card hidden" aria-label="Erro na captura">
+      <header class="header">
+        <div class="warnBadge" aria-hidden="true">!</div>
+
+        <h1 id="issueTitle" class="title" style="text-align:center; margin-top:10px;">
+          Houve um problema
+        </h1>
+
+        <p id="issueDesc" class="subtitle" style="text-align:center;">
+          Tente novamente.
+        </p>
+      </header>
+
+      <div class="hero">
+        <img id="blurPreview" class="blurPreview" alt="Prévia da foto com problema" />
+      </div>
+
+      <div id="blurScore" class="status" aria-live="polite"></div>
+
+      <div class="stack">
+        <button id="tryAgainBtn" class="btn btn-primary" type="button">Tentar novamente</button>
+        <button id="logoutBtnBlur" class="btn btn-ghost" type="button">Sair</button>
+      </div>
+    </section>
+
+    <!-- SUCCESS -->
+    <section id="successView" class="card hidden" aria-label="Sucesso">
+      <header class="successHeader">
+        <div class="successBadge" aria-hidden="true">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+            <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <h1 class="title" style="text-align:center; margin-top: 10px;">Capturas finalizadas</h1>
+        <p class="subtitle" style="text-align:center;">
+          Agora você pode seguir com a formalização.
+        </p>
+      </header>
+
+      <div class="docList" aria-label="Lista de documentos">
+        <button id="successRearBtn" class="docItem docBtn" type="button">
+          <div class="docLeft">
+            <div class="docCheck" aria-hidden="true">✓</div>
+            <div class="docTexts">
+              <div class="docTitle">Traseira do veículo</div>
+              <div class="docMeta">Toque para visualizar</div>
+            </div>
+          </div>
+          <div class="docThumb">
+            <img id="rearThumb" alt="Miniatura traseira do veículo" />
+          </div>
+        </button>
+
+        <button id="successPlateBtn" class="docItem docBtn" type="button">
+          <div class="docLeft">
+            <div class="docCheck" aria-hidden="true">✓</div>
+            <div class="docTexts">
+              <div class="docTitle">Placa do veículo</div>
+              <div class="docMeta">Toque para visualizar</div>
+            </div>
+          </div>
+          <div class="docThumb">
+            <img id="plateThumb" alt="Miniatura placa do veículo" />
+          </div>
+        </button>
+      </div>
+
+      <div class="stack">
+        <button id="goFormalizationBtn" class="btn btn-primary" type="button">
+          Seguir para formalização
+        </button>
+        <button id="logoutBtnSuccess" class="btn btn-ghost" type="button">Sair</button>
+      </div>
+    </section>
+
+    <!-- MODAL (VISUALIZAR FOTO) -->
+    <section id="photoModal" class="modal hidden" aria-label="Visualizar foto">
+      <div id="modalBackdrop" class="modalBackdrop" aria-hidden="true"></div>
+      <div class="modalCard" role="dialog" aria-modal="true">
+        <div class="modalHeader">
+          <div id="modalTitle" class="modalTitle">Foto</div>
+          <button id="closeModalBtn" class="iconBtn" type="button" aria-label="Fechar">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <img id="modalImg" class="modalImg" alt="Foto em tela cheia" />
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Tensorflow + COCO-SSD (detectar carro) -->
+ 
+  <script src="app.js"></script>
 </body>
 </html>
