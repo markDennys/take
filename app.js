@@ -116,18 +116,18 @@ let capturedImage = null;
 let finalPhotoBase64 = null;
 
 // ====== BLUR THRESHOLD ======
-function getBlurThreshold(){
+function getBlurThreshold() {
   return currentStep === STEP_PLATE ? 220 : 150;
 }
 
 // ====== CONTENT CHECK ======
 let cocoModel = null;
-const CAR_MIN_SCORE = 0.40;
+const CAR_MIN_SCORE = 0.4;
 const PLATE_REGEX = /[A-Z]{3}\d[A-Z0-9]\d{2}|[A-Z]{3}\d{4}/i;
 
 // Crop settings
-const CROP_INIT_W_RATIO = 0.80;
-const CROP_INIT_H_RATIO = 0.40;
+const CROP_INIT_W_RATIO = 0.8;
+const CROP_INIT_H_RATIO = 0.4;
 const CROP_MIN_SIZE = 140;
 const HANDLE_SIZE = 28;
 
@@ -138,32 +138,48 @@ let activePointerId = null;
 let dragMode = null;
 let start = { px: 0, py: 0, x: 0, y: 0, w: 0, h: 0 };
 
-function show(el){ el?.classList.remove("hidden"); }
-function hide(el){ el?.classList.add("hidden"); }
+function show(el) {
+  el?.classList.remove("hidden");
+}
+function hide(el) {
+  el?.classList.add("hidden");
+}
 
-function setHomeStatus(msg){ homeStatus.textContent = msg || ""; }
-function setGuideStatus(msg){ guideStatus.textContent = msg || ""; }
-function setCapStatus(msg){ capStatus.textContent = msg || ""; }
+function setHomeStatus(msg) {
+  homeStatus.textContent = msg || "";
+}
+function setGuideStatus(msg) {
+  guideStatus.textContent = msg || "";
+}
+function setCapStatus(msg) {
+  capStatus.textContent = msg || "";
+}
 
-function showToast(message){
+function showToast(message) {
   toastText.textContent = message;
   show(toast);
   clearTimeout(showToast._t);
-  showToast._t = setTimeout(()=> hide(toast), 1400);
+  showToast._t = setTimeout(() => hide(toast), 1400);
 }
 
-function safePlayVideo(){
-  return new Promise((resolve)=>{
+function safePlayVideo() {
+  return new Promise((resolve) => {
     const done = () => resolve();
 
     if (video.readyState >= 2 && video.videoWidth > 0) {
-      video.play().catch(()=>{}).finally(done);
+      video
+        .play()
+        .catch(() => {})
+        .finally(done);
       return;
     }
 
     const onMeta = () => {
       video.removeEventListener("loadedmetadata", onMeta);
-      video.play().catch(()=>{}).finally(done);
+      video
+        .play()
+        .catch(() => {})
+        .finally(done);
     };
 
     video.addEventListener("loadedmetadata", onMeta, { once: true });
@@ -173,29 +189,31 @@ function safePlayVideo(){
 
 // ========= GUIDE IMAGENS =========
 const rearImg = "rear.png";
-const rearFallbackUrl = "https://cdn.gazetasp.com.br/upload/dn_arquivo/2022/08/novo-porsche-911-gt3-r-traseira.jpg";
+const rearFallbackUrl =
+  "https://cdn.gazetasp.com.br/upload/dn_arquivo/2022/08/novo-porsche-911-gt3-r-traseira.jpg";
 const plateSvg =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='360' viewBox='0 0 560 360'%3E%3Crect width='560' height='360' rx='28' fill='%23F3F4F6'/%3E%3Crect x='150' y='120' width='260' height='150' rx='18' fill='%23111827' opacity='0.85'/%3E%3Crect x='175' y='150' width='210' height='55' rx='10' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='22' fill='%23111827'%3EABC1D23%3C/text%3E%3Ctext x='50%25' y='78%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='14' fill='%23111827' opacity='0.55'%3EPlaca do ve%C3%ADculo%3C/text%3E%3C/svg%3E";
 
 // ================= MODAL =================
-function openModal(title, imgSrc){
+function openModal(title, imgSrc) {
   if (!imgSrc) return;
   modalTitle.textContent = title || "Foto";
   modalImg.src = imgSrc;
   show(photoModal);
 }
-function closeModal(){
+function closeModal() {
   hide(photoModal);
   modalImg.src = "";
 }
 modalBackdrop.addEventListener("click", closeModal);
 closeModalBtn.addEventListener("click", closeModal);
-document.addEventListener("keydown", (e)=>{
-  if (e.key === "Escape" && !photoModal.classList.contains("hidden")) closeModal();
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !photoModal.classList.contains("hidden"))
+    closeModal();
 });
 
 // ================= FREEZE + LOADING =================
-function startValidationUI(dataUrl, subText){
+function startValidationUI(dataUrl, subText) {
   // trava botões
   takePhotoBtn.disabled = true;
   backBtn.disabled = true;
@@ -211,7 +229,7 @@ function startValidationUI(dataUrl, subText){
   show(validateOverlay);
 }
 
-function stopValidationUI(){
+function stopValidationUI() {
   hide(validateOverlay);
 
   // volta pro vídeo (caso continue na captura)
@@ -227,7 +245,7 @@ function stopValidationUI(){
 }
 
 // ================= ISSUE VIEW =================
-function showIssueScreen({ title, desc, dataUrl, metaText }){
+function showIssueScreen({ title, desc, dataUrl, metaText }) {
   hide(loginView);
   hide(homeView);
   hide(guideView);
@@ -242,27 +260,31 @@ function showIssueScreen({ title, desc, dataUrl, metaText }){
 }
 
 // ================= HOME / CHECKLIST =================
-function computeNextStep(){
+function computeNextStep() {
   if (!payload.rearPhotoBase64) return STEP_REAR;
   if (!payload.platePhotoBase64) return STEP_PLATE;
   return null;
 }
 
-function refreshChecklistUI(){
+function refreshChecklistUI() {
   const rearDone = !!payload.rearPhotoBase64;
-  docRearMeta.textContent = rearDone ? "Concluído (toque para ver)" : "Pendente";
+  docRearMeta.textContent = rearDone
+    ? "Concluído (toque para ver)"
+    : "Pendente";
   docRearBadge.textContent = rearDone ? "✓" : "•";
   docRearBadge.classList.toggle("docCheck--pending", !rearDone);
   docRearThumb.src = rearDone ? payload.rearPhotoBase64 : "";
 
   const plateDone = !!payload.platePhotoBase64;
-  docPlateMeta.textContent = plateDone ? "Concluído (toque para ver)" : "Pendente";
+  docPlateMeta.textContent = plateDone
+    ? "Concluído (toque para ver)"
+    : "Pendente";
   docPlateBadge.textContent = plateDone ? "✓" : "•";
   docPlateBadge.classList.toggle("docCheck--pending", !plateDone);
   docPlateThumb.src = plateDone ? payload.platePhotoBase64 : "";
 
   const next = computeNextStep();
-  if (!next){
+  if (!next) {
     startFlowBtn.textContent = "Tudo concluído";
     startFlowBtn.disabled = true;
     setHomeStatus("Você já capturou todos os documentos.");
@@ -273,7 +295,7 @@ function refreshChecklistUI(){
   }
 }
 
-function goToHome(){
+function goToHome() {
   hide(loginView);
   hide(guideView);
   hide(captureView);
@@ -285,30 +307,37 @@ function goToHome(){
   if (next) currentStep = next;
 
   refreshChecklistUI();
-  try{ video.pause(); }catch(_){}
+  try {
+    video.pause();
+  } catch (_) {}
 }
 
 // ================= GUIDE =================
-function applyGuideUI(){
+function applyGuideUI() {
   guideContinueBtn.disabled = false;
   guideTitle.textContent = "É hora da captura de fotos";
 
-  if (currentStep === STEP_REAR){
+  if (currentStep === STEP_REAR) {
     guideDesc.innerHTML =
       "Para fotografar a <strong>traseira do veículo</strong>, permita o uso da <strong>localização</strong> e da <strong>câmera</strong>.";
     guideImage.src = rearImg;
-    guideImage.onerror = () => { guideImage.src = rearFallbackUrl; };
+    guideImage.onerror = () => {
+      guideImage.src = rearFallbackUrl;
+    };
   } else {
     guideDesc.innerHTML =
       "Agora vamos fotografar a <strong>placa do veículo</strong>. Mantenha a placa bem legível e com boa iluminação.";
-    guideImage.src = 'https://s2-autoesporte.glbimg.com/nfnDyg9J06LgT7WTtr_GGQxQbAo=/1200x/smart/filters:cover():strip_icc()/i.s3.glbimg.com/v1/AUTH_cf9d035bf26b4646b105bd958f32089d/internal_photos/bs/2020/h/q/sc8A5kQLCrkoBheEg7xA/2020-06-17-placa-mercosul-1.jpg';
+    guideImage.src =
+      "https://s2-autoesporte.glbimg.com/nfnDyg9J06LgT7WTtr_GGQxQbAo=/1200x/smart/filters:cover():strip_icc()/i.s3.glbimg.com/v1/AUTH_cf9d035bf26b4646b105bd958f32089d/internal_photos/bs/2020/h/q/sc8A5kQLCrkoBheEg7xA/2020-06-17-placa-mercosul-1.jpg";
   }
 
-  guideContinueBtn.textContent = permissionsReady ? "Abrir câmera" : "Permitir localização e câmera";
+  guideContinueBtn.textContent = permissionsReady
+    ? "Abrir câmera"
+    : "Permitir localização e câmera";
   setGuideStatus("");
 }
 
-function goToGuide(){
+function goToGuide() {
   hide(loginView);
   hide(homeView);
   hide(captureView);
@@ -319,24 +348,25 @@ function goToGuide(){
 }
 
 // ================= PERMISSÕES =================
-function getLocationOnce(){
-  return new Promise((resolve, reject)=>{
+function getLocationOnce() {
+  return new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error("geo_not_supported"));
     navigator.geolocation.getCurrentPosition(
-      pos => resolve(pos),
-      err => reject(err),
-      { enableHighAccuracy:true, timeout:12000, maximumAge:0 }
+      (pos) => resolve(pos),
+      (err) => reject(err),
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
     );
   });
 }
 
-async function startCameraWithGesture(){
-  if (!navigator.mediaDevices?.getUserMedia) throw new Error("camera_not_supported");
+async function startCameraWithGesture() {
+  if (!navigator.mediaDevices?.getUserMedia)
+    throw new Error("camera_not_supported");
 
-  if (!stream){
+  if (!stream) {
     stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: "environment" } },
-      audio: false
+      audio: false,
     });
   }
 
@@ -344,7 +374,7 @@ async function startCameraWithGesture(){
   await safePlayVideo();
 }
 
-async function ensurePermissions(){
+async function ensurePermissions() {
   if (permissionsReady) return;
 
   const pos = await getLocationOnce();
@@ -352,7 +382,7 @@ async function ensurePermissions(){
     lat: pos.coords.latitude,
     lng: pos.coords.longitude,
     accuracy: pos.coords.accuracy,
-    timestamp: pos.timestamp
+    timestamp: pos.timestamp,
   };
   sessionStorage.setItem("poc_location", JSON.stringify(payload.location));
 
@@ -361,7 +391,7 @@ async function ensurePermissions(){
 }
 
 // ================= CAPTURE UI =================
-function resetCaptureUI(){
+function resetCaptureUI() {
   show(cameraBox);
   hide(cropBox);
 
@@ -392,13 +422,15 @@ function resetCaptureUI(){
   logoutBtnCap.disabled = false;
 }
 
-function applyCaptureUI(){
+function applyCaptureUI() {
   document.body.classList.toggle("step-plate", currentStep === STEP_PLATE);
 
-  if (capTitle) capTitle.textContent = currentStep === STEP_REAR ? "Captura 1/2" : "Captura 2/2";
+  if (capTitle)
+    capTitle.textContent =
+      currentStep === STEP_REAR ? "Captura 1/2" : "Captura 2/2";
   useBtn.textContent = currentStep === STEP_REAR ? "Continuar" : "Finalizar";
 
-  if (currentStep === STEP_REAR){
+  if (currentStep === STEP_REAR) {
     capSubtitle.textContent = "Traseira do veículo";
     cameraHint.textContent = "Enquadre a traseira do veículo";
   } else {
@@ -407,7 +439,7 @@ function applyCaptureUI(){
   }
 }
 
-function goToCapture(){
+function goToCapture() {
   hide(loginView);
   hide(homeView);
   hide(guideView);
@@ -421,7 +453,7 @@ function goToCapture(){
   setCapStatus("Câmera pronta.");
 }
 
-function goToSuccess(){
+function goToSuccess() {
   hide(loginView);
   hide(homeView);
   hide(guideView);
@@ -436,7 +468,7 @@ function goToSuccess(){
 }
 
 // ================= BLUR DETECTOR =================
-function computeSharpnessScoreFromCanvas(canvas){
+function computeSharpnessScoreFromCanvas(canvas) {
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   const w = canvas.width;
   const h = canvas.height;
@@ -449,13 +481,15 @@ function computeSharpnessScoreFromCanvas(canvas){
 
   const gray = new Float32Array(gw * gh);
   let idx = 0;
-  for (let y = 0; y < gh; y++){
+  for (let y = 0; y < gh; y++) {
     const sy = y * stride;
-    for (let x = 0; x < gw; x++){
+    for (let x = 0; x < gw; x++) {
       const sx = x * stride;
       const p = (sy * w + sx) * 4;
-      const r = img[p], g = img[p+1], b = img[p+2];
-      gray[idx++] = 0.2126*r + 0.7152*g + 0.0722*b;
+      const r = img[p],
+        g = img[p + 1],
+        b = img[p + 2];
+      gray[idx++] = 0.2126 * r + 0.7152 * g + 0.0722 * b;
     }
   }
 
@@ -463,33 +497,36 @@ function computeSharpnessScoreFromCanvas(canvas){
   let sumSq = 0;
   let count = 0;
 
-  for (let y = 1; y < gh-1; y++){
-    for (let x = 1; x < gw-1; x++){
-      const c = gray[y*gw + x];
-      const up = gray[(y-1)*gw + x];
-      const dn = gray[(y+1)*gw + x];
-      const lf = gray[y*gw + (x-1)];
-      const rt = gray[y*gw + (x+1)];
-      const lap = (up + dn + lf + rt) - 4*c;
+  for (let y = 1; y < gh - 1; y++) {
+    for (let x = 1; x < gw - 1; x++) {
+      const c = gray[y * gw + x];
+      const up = gray[(y - 1) * gw + x];
+      const dn = gray[(y + 1) * gw + x];
+      const lf = gray[y * gw + (x - 1)];
+      const rt = gray[y * gw + (x + 1)];
+      const lap = up + dn + lf + rt - 4 * c;
       sum += lap;
-      sumSq += lap*lap;
+      sumSq += lap * lap;
       count++;
     }
   }
 
   const mean = sum / Math.max(1, count);
-  const variance = (sumSq / Math.max(1, count)) - mean*mean;
+  const variance = sumSq / Math.max(1, count) - mean * mean;
   return variance;
 }
 
-function isBlurryFromDataUrl(dataUrl){
+function isBlurryFromDataUrl(dataUrl) {
   const img = new Image();
   img.src = dataUrl;
 
-  return new Promise((resolve)=>{
+  return new Promise((resolve) => {
     img.onload = () => {
       const maxSide = 420;
-      const ratio = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+      const ratio = Math.min(
+        1,
+        maxSide / Math.max(img.naturalWidth, img.naturalHeight),
+      );
       const w = Math.max(1, Math.round(img.naturalWidth * ratio));
       const h = Math.max(1, Math.round(img.naturalHeight * ratio));
 
@@ -507,34 +544,34 @@ function isBlurryFromDataUrl(dataUrl){
 }
 
 // ================= CONTENT DETECTORS =================
-function dataUrlToImage(dataUrl){
-  return new Promise((resolve, reject)=>{
+function dataUrlToImage(dataUrl) {
+  return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = ()=> resolve(img);
+    img.onload = () => resolve(img);
     img.onerror = reject;
     img.src = dataUrl;
   });
 }
 
-async function ensureCocoModel(){
+async function ensureCocoModel() {
   if (cocoModel) return cocoModel;
   cocoModel = await cocoSsd.load();
   return cocoModel;
 }
 
-async function detectCarFromDataUrl(dataUrl){
+async function detectCarFromDataUrl(dataUrl) {
   const model = await ensureCocoModel();
   const img = await dataUrlToImage(dataUrl);
 
   const predictions = await model.detect(img);
   const best = predictions
-    .filter(p => ["car","truck","bus","motorcycle"].includes(p.class))
-    .sort((a,b)=> b.score - a.score)[0];
+    .filter((p) => ["car", "truck", "bus", "motorcycle"].includes(p.class))
+    .sort((a, b) => b.score - a.score)[0];
 
   return { hasCar: !!best && best.score >= CAR_MIN_SCORE, best: best || null };
 }
 
-function drawCenterCropForPlate(img, outSize = 640){
+function drawCenterCropForPlate(img, outSize = 640) {
   const c = document.createElement("canvas");
   const ctx = c.getContext("2d");
 
@@ -553,28 +590,28 @@ function drawCenterCropForPlate(img, outSize = 640){
   ctx.drawImage(img, sx, sy, cropW, cropH, 0, 0, c.width, c.height);
 
   // binarização simples
-  const imgData = ctx.getImageData(0,0,c.width,c.height);
+  const imgData = ctx.getImageData(0, 0, c.width, c.height);
   const d = imgData.data;
-  for (let i=0; i<d.length; i+=4){
-    const r=d[i], g=d[i+1], b=d[i+2];
-    const lum = 0.2126*r + 0.7152*g + 0.0722*b;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i],
+      g = d[i + 1],
+      b = d[i + 2];
+    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
     const v = lum > 140 ? 255 : 0;
-    d[i]=d[i+1]=d[i+2]=v;
+    d[i] = d[i + 1] = d[i + 2] = v;
   }
-  ctx.putImageData(imgData,0,0);
+  ctx.putImageData(imgData, 0, 0);
 
   return c;
 }
 
-async function detectPlateFromDataUrl(dataUrl){
+async function detectPlateFromDataUrl(dataUrl) {
   const img = await dataUrlToImage(dataUrl);
   const plateCanvas = drawCenterCropForPlate(img, 640);
 
-  const { data } = await Tesseract.recognize(
-    plateCanvas,
-    "eng",
-    { tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" }
-  );
+  const { data } = await Tesseract.recognize(plateCanvas, "eng", {
+    tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+  });
 
   const raw = (data?.text || "").toUpperCase();
   const compact = raw.replace(/[^A-Z0-9]/g, "");
@@ -584,14 +621,14 @@ async function detectPlateFromDataUrl(dataUrl){
 }
 
 // ================= CROP =================
-function getPointerPos(evt, canvasEl){
+function getPointerPos(evt, canvasEl) {
   const rect = canvasEl.getBoundingClientRect();
   const x = (evt.clientX - rect.left) * (canvasEl.width / rect.width);
   const y = (evt.clientY - rect.top) * (canvasEl.height / rect.height);
   return { x, y };
 }
 
-function initCropRect(){
+function initCropRect() {
   const cw = cropCanvas.width;
   const ch = cropCanvas.height;
 
@@ -606,7 +643,7 @@ function initCropRect(){
   clampCrop();
 }
 
-function clampCrop(){
+function clampCrop() {
   if (!capturedImage) return;
 
   cropRect.w = Math.max(CROP_MIN_SIZE, Math.min(cropRect.w, cropCanvas.width));
@@ -618,32 +655,38 @@ function clampCrop(){
   cropRect.y = Math.max(0, Math.min(cropRect.y, maxY));
 }
 
-function drawPlainImage(imgEl){
+function drawPlainImage(imgEl) {
   const ctx = cropCanvas.getContext("2d");
   cropCanvas.width = imgEl.naturalWidth;
   cropCanvas.height = imgEl.naturalHeight;
-  ctx.clearRect(0,0,cropCanvas.width,cropCanvas.height);
+  ctx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
   ctx.drawImage(imgEl, 0, 0, cropCanvas.width, cropCanvas.height);
 }
 
-function drawCropOverlay(){
+function drawCropOverlay() {
   if (!capturedImage) return;
 
   const ctx = cropCanvas.getContext("2d");
   const cw = cropCanvas.width;
   const ch = cropCanvas.height;
 
-  ctx.clearRect(0,0,cw,ch);
+  ctx.clearRect(0, 0, cw, ch);
   ctx.drawImage(capturedImage, 0, 0, cw, ch);
 
   ctx.fillStyle = "rgba(0,0,0,0.40)";
-  ctx.fillRect(0,0,cw,ch);
+  ctx.fillRect(0, 0, cw, ch);
 
   ctx.clearRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
   ctx.drawImage(
     capturedImage,
-    cropRect.x, cropRect.y, cropRect.w, cropRect.h,
-    cropRect.x, cropRect.y, cropRect.w, cropRect.h
+    cropRect.x,
+    cropRect.y,
+    cropRect.w,
+    cropRect.h,
+    cropRect.x,
+    cropRect.y,
+    cropRect.w,
+    cropRect.h,
   );
 
   ctx.strokeStyle = "rgba(255,255,255,0.95)";
@@ -655,20 +698,40 @@ function drawCropOverlay(){
   ctx.fillRect(cropRect.x - 1, cropRect.y - 1, hs, hs);
   ctx.fillRect(cropRect.x + cropRect.w - hs + 1, cropRect.y - 1, hs, hs);
   ctx.fillRect(cropRect.x - 1, cropRect.y + cropRect.h - hs + 1, hs, hs);
-  ctx.fillRect(cropRect.x + cropRect.w - hs + 1, cropRect.y + cropRect.h - hs + 1, hs, hs);
+  ctx.fillRect(
+    cropRect.x + cropRect.w - hs + 1,
+    cropRect.y + cropRect.h - hs + 1,
+    hs,
+    hs,
+  );
 }
 
-function pointInRect(px, py, rx, ry, rw, rh){
+function pointInRect(px, py, rx, ry, rw, rh) {
   return px >= rx && px <= rx + rw && py >= ry && py <= ry + rh;
 }
 
-function getHandleAtPoint(p){
+function getHandleAtPoint(p) {
   const hs = HANDLE_SIZE;
 
-  const nw = { x: cropRect.x - hs/2, y: cropRect.y - hs/2, w: hs, h: hs };
-  const ne = { x: cropRect.x + cropRect.w - hs/2, y: cropRect.y - hs/2, w: hs, h: hs };
-  const sw = { x: cropRect.x - hs/2, y: cropRect.y + cropRect.h - hs/2, w: hs, h: hs };
-  const se = { x: cropRect.x + cropRect.w - hs/2, y: cropRect.y + cropRect.h - hs/2, w: hs, h: hs };
+  const nw = { x: cropRect.x - hs / 2, y: cropRect.y - hs / 2, w: hs, h: hs };
+  const ne = {
+    x: cropRect.x + cropRect.w - hs / 2,
+    y: cropRect.y - hs / 2,
+    w: hs,
+    h: hs,
+  };
+  const sw = {
+    x: cropRect.x - hs / 2,
+    y: cropRect.y + cropRect.h - hs / 2,
+    w: hs,
+    h: hs,
+  };
+  const se = {
+    x: cropRect.x + cropRect.w - hs / 2,
+    y: cropRect.y + cropRect.h - hs / 2,
+    w: hs,
+    h: hs,
+  };
 
   if (pointInRect(p.x, p.y, nw.x, nw.y, nw.w, nw.h)) return "nw";
   if (pointInRect(p.x, p.y, ne.x, ne.y, ne.w, ne.h)) return "ne";
@@ -677,27 +740,36 @@ function getHandleAtPoint(p){
   return null;
 }
 
-function onPointerDown(evt){
+function onPointerDown(evt) {
   if (!capturedImage || !cropEnabled) return;
 
   const p = getPointerPos(evt, cropCanvas);
   const handle = getHandleAtPoint(p);
 
   if (handle) dragMode = handle;
-  else if (pointInRect(p.x, p.y, cropRect.x, cropRect.y, cropRect.w, cropRect.h)) dragMode = "move";
-  else { dragMode = null; return; }
+  else if (
+    pointInRect(p.x, p.y, cropRect.x, cropRect.y, cropRect.w, cropRect.h)
+  )
+    dragMode = "move";
+  else {
+    dragMode = null;
+    return;
+  }
 
   activePointerId = evt.pointerId;
   cropCanvas.setPointerCapture(activePointerId);
 
-  start.px = p.x; start.py = p.y;
-  start.x = cropRect.x; start.y = cropRect.y;
-  start.w = cropRect.w; start.h = cropRect.h;
+  start.px = p.x;
+  start.py = p.y;
+  start.x = cropRect.x;
+  start.y = cropRect.y;
+  start.w = cropRect.w;
+  start.h = cropRect.h;
 
   evt.preventDefault();
 }
 
-function onPointerMove(evt){
+function onPointerMove(evt) {
   if (!capturedImage || !cropEnabled) return;
   if (activePointerId === null || evt.pointerId !== activePointerId) return;
   if (!dragMode) return;
@@ -706,7 +778,7 @@ function onPointerMove(evt){
   const dx = p.x - start.px;
   const dy = p.y - start.py;
 
-  if (dragMode === "move"){
+  if (dragMode === "move") {
     cropRect.x = start.x + dx;
     cropRect.y = start.y + dy;
     clampCrop();
@@ -715,31 +787,57 @@ function onPointerMove(evt){
     return;
   }
 
-  let x = start.x, y = start.y, w = start.w, h = start.h;
+  let x = start.x,
+    y = start.y,
+    w = start.w,
+    h = start.h;
 
-  if (dragMode === "nw"){ x = start.x + dx; y = start.y + dy; w = start.w - dx; h = start.h - dy; }
-  if (dragMode === "ne"){ y = start.y + dy; w = start.w + dx; h = start.h - dy; }
-  if (dragMode === "sw"){ x = start.x + dx; w = start.w - dx; h = start.h + dy; }
-  if (dragMode === "se"){ w = start.w + dx; h = start.h + dy; }
+  if (dragMode === "nw") {
+    x = start.x + dx;
+    y = start.y + dy;
+    w = start.w - dx;
+    h = start.h - dy;
+  }
+  if (dragMode === "ne") {
+    y = start.y + dy;
+    w = start.w + dx;
+    h = start.h - dy;
+  }
+  if (dragMode === "sw") {
+    x = start.x + dx;
+    w = start.w - dx;
+    h = start.h + dy;
+  }
+  if (dragMode === "se") {
+    w = start.w + dx;
+    h = start.h + dy;
+  }
 
-  if (w < CROP_MIN_SIZE){
-    if (dragMode === "nw" || dragMode === "sw") x = start.x + (start.w - CROP_MIN_SIZE);
+  if (w < CROP_MIN_SIZE) {
+    if (dragMode === "nw" || dragMode === "sw")
+      x = start.x + (start.w - CROP_MIN_SIZE);
     w = CROP_MIN_SIZE;
   }
-  if (h < CROP_MIN_SIZE){
-    if (dragMode === "nw" || dragMode === "ne") y = start.y + (start.h - CROP_MIN_SIZE);
+  if (h < CROP_MIN_SIZE) {
+    if (dragMode === "nw" || dragMode === "ne")
+      y = start.y + (start.h - CROP_MIN_SIZE);
     h = CROP_MIN_SIZE;
   }
 
-  cropRect.x = x; cropRect.y = y; cropRect.w = w; cropRect.h = h;
+  cropRect.x = x;
+  cropRect.y = y;
+  cropRect.w = w;
+  cropRect.h = h;
   clampCrop();
   drawCropOverlay();
   evt.preventDefault();
 }
 
-function onPointerUp(evt){
+function onPointerUp(evt) {
   if (activePointerId === null || evt.pointerId !== activePointerId) return;
-  try{ cropCanvas.releasePointerCapture(activePointerId); }catch(_){}
+  try {
+    cropCanvas.releasePointerCapture(activePointerId);
+  } catch (_) {}
   activePointerId = null;
   dragMode = null;
 }
@@ -752,12 +850,12 @@ cropCanvas.addEventListener("pointercancel", onPointerUp);
 // ================= EVENTS =================
 
 // Login
-loginForm.addEventListener("submit",(e)=>{
+loginForm.addEventListener("submit", (e) => {
   e.preventDefault();
-  const u = (usernameEl.value||"").trim();
-  const p = (passwordEl.value||"").trim();
+  const u = (usernameEl.value || "").trim();
+  const p = (passwordEl.value || "").trim();
 
-  if (u === VALID_USER && p === VALID_PASS){
+  if (u === VALID_USER && p === VALID_PASS) {
     hide(loginError);
     currentStep = STEP_REAR;
     goToHome();
@@ -768,9 +866,9 @@ loginForm.addEventListener("submit",(e)=>{
 });
 
 // Home: fluxo guiado
-startFlowBtn.addEventListener("click", ()=>{
+startFlowBtn.addEventListener("click", () => {
   const next = computeNextStep();
-  if (!next){
+  if (!next) {
     goToSuccess();
     return;
   }
@@ -779,8 +877,8 @@ startFlowBtn.addEventListener("click", ()=>{
 });
 
 // Home: clicar no item
-docRearBtn.addEventListener("click", ()=>{
-  if (payload.rearPhotoBase64){
+docRearBtn.addEventListener("click", () => {
+  if (payload.rearPhotoBase64) {
     openModal("Traseira do veículo", payload.rearPhotoBase64);
     return;
   }
@@ -788,8 +886,8 @@ docRearBtn.addEventListener("click", ()=>{
   goToGuide();
 });
 
-docPlateBtn.addEventListener("click", ()=>{
-  if (payload.platePhotoBase64){
+docPlateBtn.addEventListener("click", () => {
+  if (payload.platePhotoBase64) {
     openModal("Placa do veículo", payload.platePhotoBase64);
     return;
   }
@@ -798,8 +896,8 @@ docPlateBtn.addEventListener("click", ()=>{
 });
 
 // Guide: continuar
-guideContinueBtn.addEventListener("click", async ()=>{
-  if (permissionsReady){
+guideContinueBtn.addEventListener("click", async () => {
+  if (permissionsReady) {
     goToCapture();
     return;
   }
@@ -808,10 +906,10 @@ guideContinueBtn.addEventListener("click", async ()=>{
   guideContinueBtn.textContent = "Aguarde...";
   setGuideStatus("Solicitando permissões...");
 
-  try{
+  try {
     await ensurePermissions();
     goToCapture();
-  }catch{
+  } catch {
     setGuideStatus("Permissão negada ou indisponível.");
     guideContinueBtn.disabled = false;
     guideContinueBtn.textContent = "Permitir localização e câmera";
@@ -822,20 +920,20 @@ guideContinueBtn.addEventListener("click", async ()=>{
 backToHomeBtn.addEventListener("click", goToHome);
 
 // Capture: voltar
-backBtn.addEventListener("click", ()=>{
+backBtn.addEventListener("click", () => {
   // se estiver validando, ignora
   if (!validateOverlay.classList.contains("hidden")) return;
   goToGuide();
 });
 
 // Tirar foto (com freeze + loading)
-takePhotoBtn.addEventListener("click", async ()=>{
-  if (!video.videoWidth || !video.videoHeight){
+takePhotoBtn.addEventListener("click", async () => {
+  if (!video.videoWidth || !video.videoHeight) {
     setCapStatus("Carregando câmera...");
     await safePlayVideo();
   }
 
-  if (!video.videoWidth || !video.videoHeight){
+  if (!video.videoWidth || !video.videoHeight) {
     setCapStatus("A câmera ainda não ficou pronta. Tente novamente.");
     return;
   }
@@ -851,18 +949,35 @@ takePhotoBtn.addEventListener("click", async ()=>{
   // freeze + loading
   startValidationUI(dataUrl, "Checando nitidez...");
 
-  try{
+  try {
     // 🔍 SOMENTE NITIDEZ
     const { blurry, score } = await isBlurryFromDataUrl(dataUrl);
 
-    if (blurry){
+    if (blurry) {
       stopValidationUI();
       showIssueScreen({
         title: "A imagem não ficou nítida",
         desc: "Tente novamente aproximando, estabilizando a câmera e garantindo boa iluminação.",
         dataUrl,
-        metaText: `Score de nitidez: ${score.toFixed(1)}`
+        metaText: `Score de nitidez: ${score.toFixed(1)}`,
       });
+      return;
+    }
+
+    validateSub.textContent = "Verificando autenticidade...";
+
+    const fraudCheck = await detectPhotoOfPhoto(dataUrl);
+
+    if (fraudCheck.isFraud) {
+      stopValidationUI();
+
+      showIssueScreen({
+        title: "Detectamos possível uso de foto ou tela",
+        desc: "Por favor, capture a imagem diretamente do objeto real.",
+        dataUrl,
+        metaText: `Brilho: ${(fraudCheck.brightRatio * 100).toFixed(0)}% | Variação: ${fraudCheck.avgVariation.toFixed(1)}`,
+      });
+
       return;
     }
 
@@ -891,12 +1006,13 @@ takePhotoBtn.addEventListener("click", async ()=>{
 
       cropEnabled = false;
 
-      setCapStatus("Foto capturada. Ajuste o recorte se quiser, ou use a foto.");
+      setCapStatus(
+        "Foto capturada. Ajuste o recorte se quiser, ou use a foto.",
+      );
     };
 
     img.src = dataUrl;
-
-  } catch (e){
+  } catch (e) {
     console.warn("Erro:", e);
 
     stopValidationUI();
@@ -904,22 +1020,19 @@ takePhotoBtn.addEventListener("click", async ()=>{
     showIssueScreen({
       title: "Erro ao processar imagem",
       desc: "Tente novamente.",
-      dataUrl
+      dataUrl,
     });
   }
 });
 
-
-
-
 // Tela erro: tentar novamente
-tryAgainBtn.addEventListener("click", ()=>{
+tryAgainBtn.addEventListener("click", () => {
   goToCapture();
   showToast("Vamos tentar de novo");
 });
 
 // Ajustar recorte
-cropModeBtn.addEventListener("click", ()=>{
+cropModeBtn.addEventListener("click", () => {
   if (!capturedImage) return;
 
   cropEnabled = true;
@@ -938,18 +1051,26 @@ cropModeBtn.addEventListener("click", ()=>{
 });
 
 // Confirmar recorte
-confirmCropBtn.addEventListener("click", ()=>{
+confirmCropBtn.addEventListener("click", () => {
   if (!capturedImage) return;
 
   const out = document.createElement("canvas");
   out.width = Math.round(cropRect.w);
   out.height = Math.round(cropRect.h);
 
-  out.getContext("2d").drawImage(
-    capturedImage,
-    cropRect.x, cropRect.y, cropRect.w, cropRect.h,
-    0, 0, out.width, out.height
-  );
+  out
+    .getContext("2d")
+    .drawImage(
+      capturedImage,
+      cropRect.x,
+      cropRect.y,
+      cropRect.w,
+      cropRect.h,
+      0,
+      0,
+      out.width,
+      out.height,
+    );
 
   const croppedBase64 = out.toDataURL("image/jpeg", 0.92);
   finalPhotoBase64 = croppedBase64;
@@ -970,32 +1091,32 @@ confirmCropBtn.addEventListener("click", ()=>{
 });
 
 // Refazer
-retakeBtn.addEventListener("click", ()=>{
+retakeBtn.addEventListener("click", () => {
   resetCaptureUI();
   safePlayVideo();
   setCapStatus("Ok. Pode tirar outra foto.");
 });
 
 // Usar foto
-useBtn.addEventListener("click", ()=>{
-  if (!finalPhotoBase64){
+useBtn.addEventListener("click", () => {
+  if (!finalPhotoBase64) {
     setCapStatus("Nenhuma foto disponível.");
     return;
   }
 
-  if (currentStep === STEP_REAR){
+  if (currentStep === STEP_REAR) {
     payload.rearPhotoBase64 = finalPhotoBase64;
     showToast("Traseira capturada");
     goToHome();
     return;
   }
 
-  if (currentStep === STEP_PLATE){
+  if (currentStep === STEP_PLATE) {
     payload.platePhotoBase64 = finalPhotoBase64;
     showToast("Placa capturada");
 
     const next = computeNextStep();
-    if (next){
+    if (next) {
       goToHome();
       return;
     }
@@ -1005,17 +1126,23 @@ useBtn.addEventListener("click", ()=>{
 });
 
 // Success: visualizar fotos
-successRearBtn.addEventListener("click", ()=> openModal("Traseira do veículo", payload.rearPhotoBase64));
-successPlateBtn.addEventListener("click", ()=> openModal("Placa do veículo", payload.platePhotoBase64));
+successRearBtn.addEventListener("click", () =>
+  openModal("Traseira do veículo", payload.rearPhotoBase64),
+);
+successPlateBtn.addEventListener("click", () =>
+  openModal("Placa do veículo", payload.platePhotoBase64),
+);
 
 // Botão formalização
-goFormalizationBtn.addEventListener("click", ()=>{
+goFormalizationBtn.addEventListener("click", () => {
   console.log("Seguir para formalização (mock). Payload:", payload);
 });
 
 // Logout
-function logout(){
-  try{ if(stream) stream.getTracks().forEach(t=>t.stop()); }catch(_){}
+function logout() {
+  try {
+    if (stream) stream.getTracks().forEach((t) => t.stop());
+  } catch (_) {}
   stream = null;
   permissionsReady = false;
 
@@ -1050,7 +1177,7 @@ logoutBtnSuccess.addEventListener("click", logout);
 logoutBtnBlur.addEventListener("click", logout);
 
 // INIT
-(function init(){
+(function init() {
   hide(homeView);
   hide(guideView);
   hide(captureView);
@@ -1062,3 +1189,70 @@ logoutBtnBlur.addEventListener("click", logout);
   document.body.classList.remove("step-plate");
   resetCaptureUI();
 })();
+
+ 
+
+function detectPhotoOfPhoto(dataUrl){
+  return new Promise((resolve)=>{
+    const img = new Image();
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      const maxSize = 300;
+      const ratio = Math.min(1, maxSize / Math.max(img.width, img.height));
+
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+
+      let brightPixels = 0;
+      let total = data.length / 4;
+
+      let variationSum = 0;
+      let prevLum = null;
+
+      for(let i = 0; i < data.length; i += 4){
+        const r = data[i];
+        const g = data[i+1];
+        const b = data[i+2];
+
+        const lum = 0.2126*r + 0.7152*g + 0.0722*b;
+
+        // brilho extremo (tela/reflexo forte)
+        if(r > 250 && g > 250 && b > 250){
+          brightPixels++;
+        }
+
+        if(prevLum !== null){
+          variationSum += Math.abs(lum - prevLum);
+        }
+
+        prevLum = lum;
+      }
+
+      const brightRatio = brightPixels / total;
+      const avgVariation = variationSum / total;
+
+      // ✅ NOVA REGRA (bem mais segura)
+      const isVeryBright = brightRatio > 0.35;
+      const isVeryFlat = avgVariation < 5;
+
+      // 🚨 só bloqueia se AMBOS acontecerem
+      const isFraud = isVeryBright && isVeryFlat;
+
+      resolve({
+        isFraud,
+        brightRatio,
+        avgVariation
+      });
+    };
+
+    img.src = dataUrl;
+  });
+}
