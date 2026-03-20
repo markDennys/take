@@ -981,6 +981,26 @@ takePhotoBtn.addEventListener("click", async () => {
       return;
     }
 
+    // 📱 detectar tela
+    validateSub.textContent = "Verificando autenticidade...";
+
+    const screenCheck = await detectScreen(dataUrl);
+
+    console.log("Screen check:", screenCheck);
+
+    if (screenCheck.isScreen) {
+      stopValidationUI();
+
+      showIssueScreen({
+        title: "Detectamos que pode ser uma tela",
+        desc: "Evite capturar fotos de celulares, monitores ou imagens exibidas em telas.",
+        dataUrl,
+        metaText: `Brilho: ${(screenCheck.brightRatio * 100).toFixed(0)}% | Branco: ${(screenCheck.whiteRatio * 100).toFixed(0)}%`,
+      });
+
+      return;
+    }
+
     // ✅ SEM validação de carro ou placa
     validateSub.textContent = "Preparando prévia...";
 
@@ -1190,10 +1210,8 @@ logoutBtnBlur.addEventListener("click", logout);
   resetCaptureUI();
 })();
 
- 
-
-function detectPhotoOfPhoto(dataUrl){
-  return new Promise((resolve)=>{
+function detectPhotoOfPhoto(dataUrl) {
+  return new Promise((resolve) => {
     const img = new Image();
 
     img.onload = () => {
@@ -1217,19 +1235,19 @@ function detectPhotoOfPhoto(dataUrl){
       let variationSum = 0;
       let prevLum = null;
 
-      for(let i = 0; i < data.length; i += 4){
+      for (let i = 0; i < data.length; i += 4) {
         const r = data[i];
-        const g = data[i+1];
-        const b = data[i+2];
+        const g = data[i + 1];
+        const b = data[i + 2];
 
-        const lum = 0.2126*r + 0.7152*g + 0.0722*b;
+        const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
         // brilho extremo (tela/reflexo forte)
-        if(r > 250 && g > 250 && b > 250){
+        if (r > 250 && g > 250 && b > 250) {
           brightPixels++;
         }
 
-        if(prevLum !== null){
+        if (prevLum !== null) {
           variationSum += Math.abs(lum - prevLum);
         }
 
@@ -1249,7 +1267,83 @@ function detectPhotoOfPhoto(dataUrl){
       resolve({
         isFraud,
         brightRatio,
-        avgVariation
+        avgVariation,
+      });
+    };
+
+    img.src = dataUrl;
+  });
+}
+
+function detectScreen(dataUrl) {
+  return new Promise((resolve) => {
+    const img = new Image();
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // reduz resolução (performance)
+      const maxSize = 300;
+      const ratio = Math.min(1, maxSize / Math.max(img.width, img.height));
+
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+      let superBright = 0;
+      let pureWhite = 0;
+      let lowVarianceBlocks = 0;
+
+      let total = data.length / 4;
+
+      let lastLum = null;
+      let variationSum = 0;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+
+        const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+        // 🔆 pixels MUITO brilhantes
+        if (r > 245 && g > 245 && b > 245) {
+          superBright++;
+        }
+
+        // ⚪ branco puro (muito comum em tela)
+        if (r > 250 && g > 250 && b > 250) {
+          pureWhite++;
+        }
+
+        if (lastLum !== null) {
+          variationSum += Math.abs(lum - lastLum);
+        }
+
+        lastLum = lum;
+      }
+
+      const brightRatio = superBright / total;
+      const whiteRatio = pureWhite / total;
+      const avgVariation = variationSum / total;
+
+      // 🎯 heurísticas
+      const tooBright = brightRatio > 0.3;
+      const tooWhite = whiteRatio > 0.2;
+      const tooFlat = avgVariation < 6;
+
+      // 🚨 regra final (mais inteligente)
+      const isScreen = (tooBright && tooFlat) || (tooWhite && tooFlat);
+
+      resolve({
+        isScreen,
+        brightRatio,
+        whiteRatio,
+        avgVariation,
       });
     };
 
