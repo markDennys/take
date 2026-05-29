@@ -1,265 +1,198 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+
+<!doctype html>
+<html lang="pt_BR">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>POC Captura de Fotos</title>
-  <link rel="stylesheet" href="styles.css" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Favicon section -->
+    <link rel="apple-touch-icon" sizes="57x57" href="https://validador.estudantesdobrasil.org.br/img/favicon/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="https://validador.estudantesdobrasil.org.br/img/favicon/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="https://validador.estudantesdobrasil.org.br/img/favicon/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="https://validador.estudantesdobrasil.org.br/img/favicon/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="https://validador.estudantesdobrasil.org.br/img/favicon/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="https://validador.estudantesdobrasil.org.br/img/favicon/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="https://validador.estudantesdobrasil.org.br/img/favicon/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="https://validador.estudantesdobrasil.org.br/img/favicon/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://validador.estudantesdobrasil.org.br/img/favicon/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://validador.estudantesdobrasil.org.br/img/favicon/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://validador.estudantesdobrasil.org.br/img/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="https://validador.estudantesdobrasil.org.br/img/favicon/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://validador.estudantesdobrasil.org.br/img/favicon/favicon-16x16.png">
+    <link rel="manifest" href="https://validador.estudantesdobrasil.org.br/img/favicon/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="http://validador.estudantesdobrasil.org.br/img/favicon/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+    <!-- End favicon section -->
+    <!-- CSRF Token -->
+    <meta name="csrf-token" content="tsTzv1CfdRDRJov33ueHd4ZI6cNzEWFDwZ8zni4P">
+    <title>Validador de Carteirinhas - Estudantes do Brasil</title>
+
+    <link href="https://validador.estudantesdobrasil.org.br/css/modules/validador.css" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
 </head>
-<body>
-  <main class="screen">
 
-    <!-- TOAST -->
-    <div id="toast" class="toast hidden" role="status" aria-live="polite">
-      <div class="toastIcon" aria-hidden="true">✓</div>
-      <div id="toastText" class="toastText">Concluído</div>
+<body class="card">
+    <div class="header">
+        <img class="header_ABELogo" src="https://validador.estudantesdobrasil.org.br/img/site/imgLogo-ABE-white00.png">
     </div>
+    <div class="text_center">
+        <h3>CONSULTAR ALUNO</h3>
+    </div>
+            <div class="container">
+            <div class="section_principal">
+                <div class="info_estudante">
+                    <div class="linha_form">
+                        <div class="coluna">
+                            <div>Nome do Aluno</div>
+                            <div class="text_center field form_name">
+                                &nbsp; Graziella Castro Duarte
+                            </div>
+                        </div>
+                        <div class="coluna">
+                            <div>Status do Aluno</div>
+                            <div class="text_center field">
+                                &nbsp; Ativo
+                            </div>
+                        </div>
+                    </div>
 
-    <!-- LOGIN -->
-    <section id="loginView" class="card" aria-label="Tela de Login">
-      <header class="header">
-        <h1 class="title">Entrar</h1>
-        <p class="subtitle">Use suas credenciais para acessar a POC.</p>
-      </header>
-
-      <form id="loginForm" class="form">
-        <label class="field">
-          <span class="label">Usuário</span>
-          <input id="username" class="input" type="text" autocomplete="username" placeholder="Digite seu usuário" required />
-        </label>
-
-        <label class="field">
-          <span class="label">Senha</span>
-          <input id="password" class="input" type="password" autocomplete="current-password" placeholder="Digite sua senha" required />
-        </label>
-
-        <div id="loginError" class="alert hidden" role="alert"></div>
-
-        <button type="submit" class="btn btn-primary">Acessar</button>
-      </form>
-    </section>
-
-    <!-- HOME (CHECKLIST) -->
-    <section id="homeView" class="card hidden" aria-label="Checklist">
-      <header class="header">
-        <h1 class="title">Documentos para captura</h1>
-        <p class="subtitle">Toque em um item para capturar ou visualizar a foto.</p>
-      </header>
-
-      <div class="docList" aria-label="Lista de documentos">
-        <button id="docRearBtn" class="docItem docBtn" type="button">
-          <div class="docLeft">
-            <div id="docRearBadge" class="docCheck docCheck--pending" aria-hidden="true">•</div>
-            <div class="docTexts">
-              <div class="docTitle">Traseira do veículo</div>
-              <div id="docRearMeta" class="docMeta">Pendente</div>
+                    <div class="info_img">
+                        <div class="coluna card_img">
+                            <img class="img_estudant" src="./Captura de tela 2026-05-29 202857.png" width="150">
+                            <img class="logo_partner" src="https://validador.estudantesdobrasil.org.br/img/site/partner/logo_voudemeia.png" width="150">
+                        </div>
+                        <div class="coluna linha_form2">
+                            <div class="linha_form">
+                                <div class="linha">
+                                    <div>Código de uso</div>
+                                    <div class="text_center field">
+                                        &nbsp; JBWKH5Y2
+                                    </div>
+                                </div>
+                                <div class="linha">
+                                    <div>Data de Cadastro</div>
+                                    <div class="text_center field">
+                                        &nbsp; 12/03/2026
+                                    </div>
+                                </div>
+                                <div class="linha">
+                                    <div>Data de Validade</div>
+                                    <div class="text_center field form_200">
+                                        &nbsp; Final de Março de 2027
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="linha_form">
+                                <div class="linha">
+                                    <div>CPF</div>
+                                    <div class="text_center field form_150">
+                                        &nbsp;122*********
+                                    </div>
+                                </div>
+                                <div class="linha">
+                                    <div>RG</div>
+                                    <div class="text_center field form_150">
+                                        &nbsp;331***
+                                    </div>
+                                </div>
+                                <div class="linha">
+                                    <div>Nascimento</div>
+                                    <div class="text_center field">
+                                        
+                                        &nbsp;18/02/2000
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="linha_form">
+                                <div class="linha">
+                                    <div>Instituição de Ensino</div>
+                                    <div class="text_center field form_550">
+                                        &nbsp;UNISSAU
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="linha_form">
+                                <div class="linha">
+                                    <div>Curso</div>
+                                    <div class="text_center field form_550">
+                                        &nbsp;ANÁLISE E DESENVOLVIMENTO DE SISTEMAS
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="linha_form">
+                                <div class="linha">
+                                    <div>Tipo</div>
+                                    <div class="text_center field form_200">
+                                        &nbsp;Ensino Superior
+                                    </div>
+                                </div>
+                                <div class="linha">
+                                    <div>Ano letivo</div>
+                                    <div class="text_center field">
+                                        &nbsp;2026
+                                    </div>
+                                </div>
+                                <div class="linha">
+                                    <div>Matricula</div>
+                                    <div class="text_center field form_200">
+                                        &nbsp;01774151
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="info_dados">
+                    </div>
+                </div>
             </div>
-          </div>
-          <div class="docThumb">
-            <img id="docRearThumb" alt="Miniatura traseira do veículo" />
-          </div>
-        </button>
-
-        <button id="docPlateBtn" class="docItem docBtn" type="button">
-          <div class="docLeft">
-            <div id="docPlateBadge" class="docCheck docCheck--pending" aria-hidden="true">•</div>
-            <div class="docTexts">
-              <div class="docTitle">Placa do veículo</div>
-              <div id="docPlateMeta" class="docMeta">Pendente</div>
+            <div class=" info_estudante_btn">
+                <div class="linha_btn">
+                    <div class="consulta_realizada_time">Consulta realizada em 29/05/2026 às 20:27:22
+                    </div>
+                    <div class="wtdhGeneral_dec10pc_10 general_alignText_center">
+                        <button id="btnPesq" class="defButton" onclick="window.location.href='/'">Nova
+                            Consulta</button>
+                    </div>
+                </div>
             </div>
-          </div>
-          <div class="docThumb">
-            <img id="docPlateThumb" alt="Miniatura placa do veículo" />
-          </div>
-        </button>
-      </div>
 
-      <div class="stack">
-        <button id="startFlowBtn" class="btn btn-primary" type="button">Iniciar captura</button>
-        <div id="homeStatus" class="status" aria-live="polite"></div>
-        <button id="logoutBtnHome" class="btn btn-ghost" type="button">Sair</button>
-      </div>
-    </section>
-
-    <!-- GUIDE / INSTRUÇÕES -->
-    <section id="guideView" class="card hidden" aria-label="Instruções">
-      <header class="header">
-        <h1 id="guideTitle" class="title">É hora da captura de fotos</h1>
-        <p id="guideDesc" class="subtitle"></p>
-      </header>
-
-      <div class="hero">
-        <img id="guideImage" class="car" alt="Ilustração" />
-      </div>
-
-      <div class="stack">
-        <button id="guideContinueBtn" class="btn btn-primary" type="button">Permitir localização e câmera</button>
-        <div id="guideStatus" class="status" aria-live="polite"></div>
-        <button id="backToHomeBtn" class="btn btn-ghost" type="button">Voltar</button>
-      </div>
-    </section>
-
-    <!-- CAPTURA -->
-    <section id="captureView" class="card hidden" aria-label="Captura">
-      <header class="capHeader">
-        <button id="backBtn" class="iconBtn" type="button" aria-label="Voltar">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-
-        <div class="capTitles">
-          <div id="capTitle" class="capTitle">Captura</div>
-          <div id="capSubtitle" class="capSubtitle">---</div>
         </div>
+            
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"
+        integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
 
-        <button id="logoutBtnCap" class="iconBtn" type="button" aria-label="Sair">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M10 7V6a2 2 0 012-2h7a2 2 0 012 2v12a2 2 0 01-2 2h-7a2 2 0 01-2-2v-1" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-            <path d="M15 12H3m0 0l3-3m-3 3l3 3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-      </header>
+    
+    <script src="https://validador.estudantesdobrasil.org.br/plugins/jquery_mask/jquery.mask.min.js"></script>
 
-      <!-- CAMERA -->
-      <div id="cameraBox" class="cameraBox">
-        <video id="video" class="video" playsinline autoplay></video>
+    
+    <script src="https://validador.estudantesdobrasil.org.br/plugins/lightbox/js/lightbox.js"></script>
 
-        <!-- ✅ FREEZE FRAME (mostra a foto tirada durante validação) -->
-        <img id="freezeFrame" class="freezeFrame hidden" alt="Prévia da foto capturada" />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous">
+    </script>
 
-        <!-- ✅ LOADING OVERLAY -->
-        <div id="validateOverlay" class="validateOverlay hidden" aria-live="polite" aria-busy="true">
-          <div class="spinner" aria-hidden="true"></div>
-          <div class="validateText">
-            <div class="validateTitle">Validando...</div>
-            <div id="validateSub" class="validateSub">Aguarde</div>
-          </div>
+    <script src="https://validador.estudantesdobrasil.org.br/js/scripts.js"></script>
+
+    <div class="container">
+        <div class="center">
+            <!--- DO NOT EDIT - GlobalSign SSL Site Seal Code - DO NOT EDIT --->
+            <table width=125 border=0 cellspacing=0 cellpadding=0
+                title="CLICK TO VERIFY: This site uses a GlobalSign SSL Certificate to secure your personal information.">
+                <tr>
+                    <td><span id="ss_img_wrapper_gmogs_image_110-45_en_dblue"><a href="https://www.globalsign.com/"
+                                target="_blank" title="GlobalSign Site Seal" rel="nofollow"><img alt="SSL"
+                                    border=0 id="ss_img"
+                                    src="//seal.globalsign.com/SiteSeal/images/gs_noscript_110-45_en.gif"></a></span>
+                        <script type="text/javascript" src="//seal.globalsign.com/SiteSeal/gmogs_image_110-45_en_dblue.js"></script>
+                    </td>
+                </tr>
+            </table>
+            <!--- DO NOT EDIT - GlobalSign SSL Site Seal Code - DO NOT EDIT --->
         </div>
-
-        <div id="cameraHint" class="cameraHint">---</div>
-      </div>
-
-      <!-- FOTO/CROP -->
-      <div id="cropBox" class="cameraBox hidden">
-        <div class="cropBar">
-          <button id="cropModeBtn" class="btn btn-secondary" type="button">Ajustar recorte</button>
-          <button id="confirmCropBtn" class="btn btn-primary" type="button" disabled>Confirmar recorte</button>
-        </div>
-
-        <canvas id="cropCanvas" class="cropCanvas"></canvas>
-        <div class="cameraHint">Recorte opcional</div>
-      </div>
-
-      <div class="stack">
-        <div id="capStatus" class="status" aria-live="polite"></div>
-
-        <button id="takePhotoBtn" class="btn btn-primary" type="button">Tirar foto</button>
-
-        <div id="previewActions" class="row hidden">
-          <button id="retakeBtn" class="btn btn-secondary" type="button">Refazer</button>
-          <button id="useBtn" class="btn btn-primary" type="button">Usar foto</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ERRO (NITIDEZ / CONTEÚDO) -->
-    <section id="blurView" class="card hidden" aria-label="Erro na captura">
-      <header class="header">
-        <div class="warnBadge" aria-hidden="true">!</div>
-
-        <h1 id="issueTitle" class="title" style="text-align:center; margin-top:10px;">
-          Houve um problema
-        </h1>
-
-        <p id="issueDesc" class="subtitle" style="text-align:center;">
-          Tente novamente.
-        </p>
-      </header>
-
-      <div class="hero">
-        <img id="blurPreview" class="blurPreview" alt="Prévia da foto com problema" />
-      </div>
-
-      <div id="blurScore" class="status" aria-live="polite"></div>
-
-      <div class="stack">
-        <button id="tryAgainBtn" class="btn btn-primary" type="button">Tentar novamente</button>
-        <button id="logoutBtnBlur" class="btn btn-ghost" type="button">Sair</button>
-      </div>
-    </section>
-
-    <!-- SUCCESS -->
-    <section id="successView" class="card hidden" aria-label="Sucesso">
-      <header class="successHeader">
-        <div class="successBadge" aria-hidden="true">
-          <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
-            <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-
-        <h1 class="title" style="text-align:center; margin-top: 10px;">Capturas finalizadas</h1>
-        <p class="subtitle" style="text-align:center;">
-          Agora você pode seguir com a formalização.
-        </p>
-      </header>
-
-      <div class="docList" aria-label="Lista de documentos">
-        <button id="successRearBtn" class="docItem docBtn" type="button">
-          <div class="docLeft">
-            <div class="docCheck" aria-hidden="true">✓</div>
-            <div class="docTexts">
-              <div class="docTitle">Traseira do veículo</div>
-              <div class="docMeta">Toque para visualizar</div>
-            </div>
-          </div>
-          <div class="docThumb">
-            <img id="rearThumb" alt="Miniatura traseira do veículo" />
-          </div>
-        </button>
-
-        <button id="successPlateBtn" class="docItem docBtn" type="button">
-          <div class="docLeft">
-            <div class="docCheck" aria-hidden="true">✓</div>
-            <div class="docTexts">
-              <div class="docTitle">Placa do veículo</div>
-              <div class="docMeta">Toque para visualizar</div>
-            </div>
-          </div>
-          <div class="docThumb">
-            <img id="plateThumb" alt="Miniatura placa do veículo" />
-          </div>
-        </button>
-      </div>
-
-      <div class="stack">
-        <button id="goFormalizationBtn" class="btn btn-primary" type="button">
-          Seguir para formalização
-        </button>
-        <button id="logoutBtnSuccess" class="btn btn-ghost" type="button">Sair</button>
-      </div>
-    </section>
-
-    <!-- MODAL (VISUALIZAR FOTO) -->
-    <section id="photoModal" class="modal hidden" aria-label="Visualizar foto">
-      <div id="modalBackdrop" class="modalBackdrop" aria-hidden="true"></div>
-      <div class="modalCard" role="dialog" aria-modal="true">
-        <div class="modalHeader">
-          <div id="modalTitle" class="modalTitle">Foto</div>
-          <button id="closeModalBtn" class="iconBtn" type="button" aria-label="Fechar">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-            </svg>
-          </button>
-        </div>
-        <img id="modalImg" class="modalImg" alt="Foto em tela cheia" />
-      </div>
-    </section>
-
-  </main>
-
-  <!-- Tensorflow + COCO-SSD (detectar carro) -->
- 
-  <script src="app.js"></script>
+    </div>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"65f3deda358f48f7be934ea56874759e","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
+
 </html>
